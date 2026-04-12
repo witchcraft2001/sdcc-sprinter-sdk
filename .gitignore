@@ -1,0 +1,33 @@
+# Build artifacts
+build/
+examples/*/_build/
+examples/*/*.exe
+
+# SDCC output files
+*.ihx
+*.lk
+*.map
+*.mem
+*.noi
+*.sym
+*.rel
+*.lst
+*.rst
+*.asm
+
+# Platform-specific tool binaries
+tools/bin/
+
+# macOS
+.DS_Store
+._*
+
+# Editors / IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Claude Code
+.claude/
