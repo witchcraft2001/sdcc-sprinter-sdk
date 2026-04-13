@@ -149,6 +149,33 @@ SDK_DIR  = /path/to/sdcc-sprinter-sdk/
 include $(SDK_DIR)examples/common.mk
 ```
 
+### Memory Layout Configuration
+
+By default, programs load at `0x4100` (like SOLID C), giving ~32 KB for code+data across WIN1+WIN2. You can customize the memory layout by setting variables **before** the `include`:
+
+```makefile
+# Default layout (~32 KB code+data):
+#   CODE_LOC = 0x4100   (WIN1+WIN2: 0x4100-0xBFFF)
+#   STACK    = 0xBFFF
+
+# Compact layout (~16 KB, code in WIN2 only):
+CODE_LOC = 0x8100
+STACK    = 0xBFFF
+
+APP      = myapp
+SRCS     = main.c
+SDK_DIR  = /path/to/sdcc-sprinter-sdk/
+include $(SDK_DIR)examples/common.mk
+```
+
+| Layout | CODE_LOC | STACK | Code+Data space |
+|--------|----------|-------|-----------------|
+| Default (SOLID C compatible) | `0x4100` | `0xBFFF` | ~32 KB (WIN1+WIN2) |
+| Compact | `0x8100` | `0xBFFF` | ~16 KB (WIN2 only) |
+| Extended | `0x4100` | `0xFFFE` | ~32 KB code + WIN3 for stack |
+
+DSS allocates 3 memory pages for each program (WIN1, WIN2, WIN3), so all addresses in `0x4000-0xFFFF` are valid. The Sprinter has 4 MB RAM total — for programs needing more than 32 KB, use `dss_getmem()` and `dss_setwin()` for page banking.
+
 ## Standard C Library
 
 The SDK provides standard C headers for easy porting of existing programs. Functions are linked selectively — only used functions are included in the final binary.
@@ -280,12 +307,24 @@ For direct hardware access, use the Sprinter-specific headers. These are indepen
 
 ## Memory Map
 
-| Address Range | Usage |
-|---------------|-------|
-| `0x0000-0x3FFF` | WIN0 — Available for data |
-| `0x4000-0x7FFF` | WIN1 — Data segment (`--data-loc 0x4000`) |
-| `0x8100-0xBFFF` | WIN2 — Code + stack (stack grows down from `0xBFFF`) |
-| `0xC000-0xFFFF` | WIN3 — VRAM mapping or extra data |
+DSS allocates 3 pages (WIN1, WIN2, WIN3) for each program. Default layout (`CODE_LOC=0x4100`):
+
+| Address Range | Window | Usage |
+|---------------|--------|-------|
+| `0x0000-0x3FFF` | WIN0 | System / available for banking |
+| `0x4080-0x40FF` | WIN1 | Command line arguments (load - 0x80) |
+| `0x4100-0x7FFF` | WIN1 | **Code + data** (start of program) |
+| `0x8000-0xBFFF` | WIN2 | **Code + data** (continued) + stack |
+| `0xC000-0xFFFF` | WIN3 | Available for VRAM mapping or data |
+
+Stack grows downward from `0xBFFF`. Total code+data space: **~32 KB**.
+
+Compact layout (`CODE_LOC=0x8100`):
+
+| Address Range | Window | Usage |
+|---------------|--------|-------|
+| `0x4000-0x7FFF` | WIN1 | Available for data |
+| `0x8100-0xBFFF` | WIN2 | **Code + data** + stack (~16 KB) |
 
 ## Project Structure
 

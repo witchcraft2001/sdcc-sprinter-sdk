@@ -2,45 +2,56 @@
 
 ## Z80 Memory Map
 
-The Z80 has a 64 KB address space divided into four 16 KB windows. DSS maps RAM pages into these windows:
+The Z80 has a 64 KB address space divided into four 16 KB windows. DSS allocates 3 pages (WIN1, WIN2, WIN3) for each program.
+
+### Default Layout (CODE_LOC=0x4100, like SOLID C)
 
 ```
 0x0000 ┌─────────────────────┐
-       │  WIN0               │  Available for data
-       │  (0x0000 - 0x3FFF)  │  DSS kernel page (restored on exit)
+       │  WIN0               │  System / available for banking
+       │  (0x0000 - 0x3FFF)  │
 0x4000 ├─────────────────────┤
-       │  WIN1               │  Data segment (--data-loc 0x4000)
-       │  (0x4000 - 0x7FFF)  │  Global/static variables, string literals
+       │  WIN1               │  0x4080-0x40FF: Command line args
+       │  (0x4000 - 0x7FFF)  │  0x4100: Program entry (_entry)
+       │                     │  Code + data grows upward
 0x8000 ├─────────────────────┤
-       │  WIN2               │  Code + Stack
-       │  (0x8000 - 0xBFFF)  │  0x8000-0x80FF: EXE header (disk only)
-       │                     │  0x8100: Program entry point (_entry)
-       │                     │  Code grows upward from 0x8100
-       │                     │  Stack grows downward from 0xBFFF
+       │  WIN2               │  Code + data (continued)
+       │  (0x8000 - 0xBFFF)  │  Stack grows downward from 0xBFFF
 0xC000 ├─────────────────────┤
        │  WIN3               │  VRAM mapping or extra data
        │  (0xC000 - 0xFFFF)  │
 0xFFFF └─────────────────────┘
 ```
 
-### Memory Window Usage
+**Total code+data:** 0x4100–0xBFFF ≈ **32 KB** (WIN1 + WIN2).
 
-| Window | Address Range | Linker Flag | Usage |
-|--------|--------------|-------------|-------|
-| WIN0 | 0x0000-0x3FFF | -- | Available; DSS kernel on entry |
-| WIN1 | 0x4000-0x7FFF | `--data-loc 0x4000` | Data segment (globals, statics, strings) |
-| WIN2 | 0x8000-0xBFFF | `--code-loc 0x8100` | Code + stack |
-| WIN3 | 0xC000-0xFFFF | -- | VRAM or user-mapped pages |
+### Compact Layout (CODE_LOC=0x8100)
 
-### Code Size Budget
+```
+0x4000 ├─────────────────────┤
+       │  WIN1               │  Available for data
+0x8000 ├─────────────────────┤
+       │  WIN2               │  0x8100: Entry, code + data + stack
+       │                     │  ~16 KB available
+0xC000 ├─────────────────────┤
+```
 
-In the default SDK configuration, code and stack share WIN2 (0x8100–0xBFFF, ~15.7 KB). The stack pointer starts at 0xBFFF and grows downward.
+### Configuring Memory Layout
 
-Data occupies WIN1 (16 KB, 0x4000–0x7FFF). Global arrays, static variables, and string constants all go here.
+Override in your Makefile before `include`:
 
-**Default total:** ~16 KB for code + 16 KB for data in two windows.
+```makefile
+CODE_LOC = 0x8100    # compact: code in WIN2 only
+STACK    = 0xBFFF
+```
 
-This is a limitation of the **default memory layout**, not the hardware. The Sprinter has **4 MB RAM** (256 × 16 KB pages). For larger programs, use `dss_getmem()` and `dss_setwin()` to map additional pages into WIN0 or WIN3. SDCC also supports banked code via `--codeseg` for programs exceeding a single window.
+| Layout | CODE_LOC | STACK | Code+Data |
+|--------|----------|-------|-----------|
+| Default (SOLID C) | `0x4100` | `0xBFFF` | ~32 KB |
+| Compact | `0x8100` | `0xBFFF` | ~16 KB |
+| Extended | `0x4100` | `0xFFFE` | ~32 KB + WIN3 stack |
+
+The Sprinter has **4 MB RAM** (256 × 16 KB pages). For programs needing more than 32 KB, use `dss_getmem()` and `dss_setwin()` to map additional pages. SDCC also supports banked code via `--codeseg`.
 
 ## CRT0: C Runtime Startup
 
