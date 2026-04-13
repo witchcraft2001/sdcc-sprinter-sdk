@@ -24,9 +24,8 @@ SJASMPLUS   ?= $(SDK_DIR)tools/bin/sjasmplus
 
 # --- SDCC flags ---
 SDCC_TARGET  = -mz80
-SDCC_CALL    = --sdcccall 0
 SDCC_OPT     = --max-allocs-per-node 5000 --opt-code-speed
-SDCC_CFLAGS  = $(SDCC_TARGET) $(SDCC_CALL) -I$(SDK_DIR)include $(SDCC_OPT)
+SDCC_CFLAGS  = $(SDCC_TARGET) -I$(SDK_DIR)include $(SDCC_OPT)
 SDASZ_FLAGS  = -plosgff
 
 # --- Directories ---
@@ -133,7 +132,7 @@ $(BUILD_DIR)/app_%.rel: %.c | $(BUILD_DIR)
 	$(SDCC) $(SDCC_CFLAGS) -c -o $@ $<
 
 $(BUILD_DIR)/$(APP).ihx: $(CRT0_REL) $(LIB_C_RELS) $(APP_RELS)
-	$(SDCC) $(SDCC_TARGET) --no-std-crt0 $(SDCC_CALL) --code-loc 0x8100 --data-loc 0x4000 \
+	$(SDCC) $(SDCC_TARGET) --no-std-crt0 --code-loc 0x8100 --data-loc 0x4000 \
 		$(SDCC_OPT) -I$(INCLUDE_DIR) \
 		$(CRT0_REL) $(LIB_C_RELS) $(APP_RELS) \
 		-o $@

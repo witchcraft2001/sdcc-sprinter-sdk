@@ -1,90 +1,97 @@
 /**
- * bios.c — BIOS and hardware I/O wrappers for SDCC
+ * bios.c — BIOS and hardware I/O wrappers for SDCC sdcccall(1)
+ *
+ * Callee must clean stack params before ret!
+ * u8 stack params are packed (1 byte each, no padding).
  */
 
 #include <sprinter/bios.h>
 
 void bios_setpal(u8 index, u8 r, u8 g, u8 b) __naked {
+    /* index=A, r=L, g+b on stack (2 bytes). Callee cleans 2 bytes. */
+    (void)index; (void)r; (void)g; (void)b;
     __asm
-        ld      hl, #2
-        add     hl, sp
-        ld      a, (hl)         ; index
-        inc     hl
-        inc     hl
-        ld      d, (hl)         ; r
-        inc     hl
-        inc     hl
-        ld      e, (hl)         ; g
-        inc     hl
-        inc     hl
-        ld      b, (hl)         ; b
-        ; Pack RGB: A=index, D=R(0-3), E=G(0-3), B=B(0-3)
-        ld      c, #0xA1        ; BIOS.SetPal
+        push    ix
+        ld      d, l            ; D = r
+        ld      iy, #4
+        add     iy, sp
+        ld      e, 0 (iy)      ; E = g
+        ld      b, 1 (iy)      ; B = b
+        ld      c, #0xA1
         rst     #0x08
-        ret
+        pop     ix
+        ; clean 2 bytes of stack params
+        pop     iy
+        inc     sp
+        inc     sp
+        jp      (iy)
     __endasm;
 }
 
 void bios_putpixel(u16 x, u8 y, u8 color) __naked {
+    /* x=HL, y+color on stack (2 bytes). Callee cleans 2 bytes. */
+    (void)x; (void)y; (void)color;
     __asm
-        ld      hl, #2
-        add     hl, sp
-        ld      e, (hl)         ; x low
-        inc     hl
-        ld      d, (hl)         ; x high
-        inc     hl
-        ld      b, (hl)         ; y
-        inc     hl
-        inc     hl
-        ld      a, (hl)         ; color
-        push    de
-        pop     hl              ; HL = x
-        ld      d, b            ; D = y
-        ld      c, #0xA0        ; BIOS.PutPixel
+        push    ix
+        ld      iy, #4
+        add     iy, sp
+        ld      d, 0 (iy)      ; D = y
+        ld      a, 1 (iy)      ; A = color
+        ld      c, #0xA0
         rst     #0x08
-        ret
+        pop     ix
+        ; clean 2 bytes
+        pop     iy
+        inc     sp
+        inc     sp
+        jp      (iy)
     __endasm;
 }
 
 u16 bios_version(void) __naked {
     __asm
-        ld      c, #0xEE        ; BIOS.Version
+        push    ix
+        ld      c, #0xEE
         rst     #0x08
-        ld      l, a
-        ld      h, b
+        pop     ix
+        ld      e, a
+        ld      d, b
         ret
     __endasm;
 }
 
 u8 bios_board_id(void) __naked {
     __asm
-        ld      c, #0xED        ; BIOS.BoardID
+        push    ix
+        ld      c, #0xED
         rst     #0x08
-        ld      l, a
+        pop     ix
         ret
     __endasm;
 }
 
-u8 inp(u16 port) __z88dk_fastcall __naked {
+u8 inp(u16 port) __naked {
     __asm
         ld      c, l
         ld      b, h
         in      a, (c)
-        ld      l, a
         ret
     __endasm;
 }
 
 void outp(u16 port, u8 value) __naked {
+    /* port=HL, value on stack (1 byte). Callee cleans 1 byte. */
+    (void)port; (void)value;
     __asm
-        ld      hl, #2
-        add     hl, sp
-        ld      c, (hl)         ; port low
-        inc     hl
-        ld      b, (hl)         ; port high
-        inc     hl
-        ld      a, (hl)         ; value
+        ld      c, l
+        ld      b, h
+        ld      iy, #2
+        add     iy, sp
+        ld      a, 0 (iy)
         out     (c), a
-        ret
+        ; clean 1 byte
+        pop     iy
+        inc     sp
+        jp      (iy)
     __endasm;
 }

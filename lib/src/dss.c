@@ -1,51 +1,60 @@
 /**
- * dss.c — DSS OS system call wrappers for SDCC
+ * dss.c — DSS OS system call wrappers for SDCC sdcccall(1)
  *
- * All functions use inline Z80 assembly to call RST #10.
- * SDCC calling convention: params on stack (right to left),
- * return in A (u8), HL (u16), or DEHL (u32).
- * __z88dk_fastcall: single param in HL (or L for u8).
+ * sdcccall(1) rules:
+ *   Params: 1st u8→A, 1st u16/ptr→HL; 2nd u8→L(if 1st=A), 2nd u16/ptr→DE; 3rd+→stack
+ *   Return: u8→A, u16/ptr→DE
+ *   Callee-saved: IX only
+ *   CALLEE must clean stack params before ret!
+ *
+ * DSS (RST #10) clobbers IX — push/pop IX around all calls.
+ *
+ * Stack cleanup: pop return addr into IY, adjust SP, jp (iy).
+ *
+ * DSS open modes (real DSS source): A: 0=R/W, 1=Read, 2=Write
  */
 
 #include <sprinter/dss.h>
 
-/* Defined in crt0.s */
 extern u16 _cmdline;
 
 /* ===== Process ===== */
 
-void dss_exit(u8 code) __z88dk_fastcall __naked {
+void dss_exit(u8 code) __naked {
     __asm
-        ld      b, l            ; error code
-        ld      c, #0x41        ; DSS.Exit
-        rst     #0x10
-        ret                     ; (never reached)
-    __endasm;
-}
-
-/* ===== Console Output ===== */
-
-void dss_putchar(u8 ch) __z88dk_fastcall __naked {
-    __asm
-        ld      a, l
-        cp      #0x0A           ; LF?
-        jr      nz, _dss_putchar_out
-        ; Output CR before LF
-        ld      a, #0x0D
-        ld      c, #0x5B
-        rst     #0x10
-        ld      a, #0x0A
-_dss_putchar_out:
-        ld      c, #0x5B        ; DSS.PutChar
+        ld      b, a
+        ld      c, #0x41
         rst     #0x10
         ret
     __endasm;
 }
 
-void dss_puts(const char *str) __z88dk_fastcall __naked {
+/* ===== Console Output ===== */
+
+void dss_putchar(u8 ch) __naked {
     __asm
-        ld      c, #0x5C        ; DSS.PutStr
+        push    ix
+        cp      #0x0A
+        jr      nz, _dss_pc_out
+        push    af
+        ld      a, #0x0D
+        ld      c, #0x5B
         rst     #0x10
+        pop     af
+_dss_pc_out:
+        ld      c, #0x5B
+        rst     #0x10
+        pop     ix
+        ret
+    __endasm;
+}
+
+void dss_puts(const char *str) __naked {
+    __asm
+        push    ix
+        ld      c, #0x5C
+        rst     #0x10
+        pop     ix
         ret
     __endasm;
 }
@@ -54,33 +63,33 @@ void dss_puts(const char *str) __z88dk_fastcall __naked {
 
 u8 dss_waitkey(void) __naked {
     __asm
-        ld      c, #0x30        ; DSS.WaitKey
+        push    ix
+        ld      c, #0x30
         rst     #0x10
-        ld      l, a
+        pop     ix
         ret
     __endasm;
 }
 
 bool dss_kbhit(void) __naked {
     __asm
-        ld      c, #0x33        ; DSS.KbHit
+        push    ix
+        ld      c, #0x33
         rst     #0x10
+        pop     ix
         or      a
-        jr      z, _dss_kbhit_no
-        ld      l, #1
-        ret
-_dss_kbhit_no:
-        ld      l, #0
+        ret     z
+        ld      a, #1
         ret
     __endasm;
 }
 
 u16 dss_getche(void) __naked {
     __asm
-        ld      c, #0x32        ; DSS.GetChE
+        push    ix
+        ld      c, #0x32
         rst     #0x10
-        ld      l, e            ; char code
-        ld      h, d            ; scan/ext code
+        pop     ix
         ret
     __endasm;
 }
@@ -88,32 +97,32 @@ u16 dss_getche(void) __naked {
 /* ===== Cursor / Screen ===== */
 
 void dss_gotoxy(u8 x, u8 y) __naked {
+    /* x in A, y in L — no stack params */
     __asm
-        ld      hl, #2
-        add     hl, sp
-        ld      e, (hl)         ; x
-        inc     hl
-        inc     hl
-        ld      d, (hl)         ; y
-        dec     d               ; 1-based -> 0-based
+        ld      e, a
+        ld      d, l
+        dec     d
         dec     e
-        ld      c, #0x52        ; DSS.Locate
+        push    ix
+        ld      c, #0x52
         rst     #0x10
+        pop     ix
         ret
     __endasm;
 }
 
 void dss_clrscr(void) __naked {
     __asm
-        ld      de, #0x0000     ; top-left corner
-        ld      hl, #0x2050     ; 32 rows, 80 cols
-        ld      bc, #0x0756     ; b=attr(7=white on black), c=0x56 Clear
-        ld      a, #0x20        ; fill with space
-        rst     #0x10
-        ; Home cursor
+        push    ix
         ld      de, #0x0000
-        ld      c, #0x52        ; DSS.Locate
+        ld      hl, #0x2050
+        ld      bc, #0x0756
+        ld      a, #0x20
         rst     #0x10
+        ld      de, #0x0000
+        ld      c, #0x52
+        rst     #0x10
+        pop     ix
         ret
     __endasm;
 }
@@ -122,18 +131,20 @@ void dss_clrscr(void) __naked {
 
 u8 dss_getdisk(void) __naked {
     __asm
-        ld      c, #0x02        ; DSS.GetDisk
+        push    ix
+        ld      c, #0x02
         rst     #0x10
-        ld      l, a
+        pop     ix
         ret
     __endasm;
 }
 
-void dss_setdisk(u8 disk) __z88dk_fastcall __naked {
+void dss_setdisk(u8 disk) __naked {
     __asm
-        ld      a, l
-        ld      c, #0x01        ; DSS.SetDisk (enable/select)
+        push    ix
+        ld      c, #0x01
         rst     #0x10
+        pop     ix
         ret
     __endasm;
 }
@@ -141,197 +152,201 @@ void dss_setdisk(u8 disk) __z88dk_fastcall __naked {
 /* ===== File I/O ===== */
 
 i16 dss_open(const char *path, u8 mode) __naked {
+    /*  path in HL, mode on stack (1 byte). Callee must clean 1 byte.
+     *  DSS: A=mode (0=R/W, 1=Read, 2=Write), HL=path, C=0x11 */
+    (void)path; (void)mode;
     __asm
-        ld      hl, #2
-        add     hl, sp
-        ld      e, (hl)         ; path low
-        inc     hl
-        ld      d, (hl)         ; path high
-        inc     hl
-        ld      b, (hl)         ; mode
-        ex      de, hl          ; HL = path
-        ld      c, #0x11        ; DSS.Open
+        push    ix
+        ld      iy, #4
+        add     iy, sp
+        ld      a, 0 (iy)      ; mode from stack
+        inc     a               ; O_RDONLY(0)→1, O_WRONLY(1)→2, O_RDWR(2)→3
+        cp      #3
+        jr      nz, _dss_open_go
+        xor     a               ; O_RDWR: 3→0 (DSS R/W mode)
+_dss_open_go:
+        ld      c, #0x11
         rst     #0x10
+        pop     ix
         jr      c, _dss_open_err
-        ld      l, a            ; fd in A
-        ld      h, #0
-        ret
+        ld      e, a
+        ld      d, #0
+        ; clean 1 byte of stack param, return DE
+        pop     iy
+        inc     sp
+        jp      (iy)
 _dss_open_err:
-        ld      hl, #-1
-        ret
+        ld      de, #0xFFFF
+        pop     iy
+        inc     sp
+        jp      (iy)
     __endasm;
 }
 
 i16 dss_creat(const char *path) __naked {
+    /* path in HL. No stack params. */
     __asm
-        ld      hl, #2
-        add     hl, sp
-        ld      e, (hl)
-        inc     hl
-        ld      d, (hl)
-        ex      de, hl          ; HL = path
-        ld      c, #0x0A        ; DSS.Creat
+        push    ix
+        ld      a, #0x20        ; attribute: archive
+        ld      c, #0x0A
         rst     #0x10
+        pop     ix
         jr      c, _dss_creat_err
-        ld      l, a            ; fd
-        ld      h, #0
+        ld      e, a
+        ld      d, #0
         ret
 _dss_creat_err:
-        ld      hl, #-1
+        ld      de, #0xFFFF
         ret
     __endasm;
 }
 
-u8 dss_close(u8 fd) __z88dk_fastcall __naked {
+u8 dss_close(u8 fd) __naked {
+    /* fd in A. No stack params. */
     __asm
-        ld      a, l            ; fd
-        ld      c, #0x12        ; DSS.Close
+        push    ix
+        ld      c, #0x12
         rst     #0x10
-        ld      l, a
+        pop     ix
         ret
     __endasm;
 }
 
 i16 dss_read(u8 fd, void *buf, u16 count) __naked {
+    /* fd in A, buf in DE, count on stack (2 bytes). Callee cleans 2 bytes. */
+    (void)fd; (void)buf; (void)count;
     __asm
-        ld      hl, #2
-        add     hl, sp
-        ld      a, (hl)         ; fd
-        inc     hl
-        inc     hl
-        ld      e, (hl)         ; buf low
-        inc     hl
-        ld      d, (hl)         ; buf high
-        inc     hl
-        ld      c, (hl)         ; count low -> will be in HL
-        inc     hl
-        ld      b, (hl)         ; count high
-        push    bc
-        pop     hl              ; HL = count
-        ex      de, hl          ; DE = count, HL = buf
-        ld      c, #0x13        ; DSS.Read
         push    ix
+        ex      de, hl          ; HL = buf
+        ld      iy, #4
+        add     iy, sp
+        ld      e, 0 (iy)
+        ld      d, 1 (iy)      ; DE = count
+        ld      c, #0x13
         rst     #0x10
         pop     ix
         jr      c, _dss_read_err
-        ; DE = bytes actually read
-        ex      de, hl
-        ret
+        ; DE = bytes read (set by DSS)
+        pop     iy              ; return address
+        inc     sp
+        inc     sp              ; clean 2 bytes
+        jp      (iy)
 _dss_read_err:
-        ld      hl, #-1
-        ret
+        ld      de, #0xFFFF
+        pop     iy
+        inc     sp
+        inc     sp
+        jp      (iy)
     __endasm;
 }
 
 i16 dss_write(u8 fd, const void *buf, u16 count) __naked {
+    /* fd in A, buf in DE, count on stack (2 bytes). Callee cleans 2 bytes.
+     * Note: emulator bug — doesn't set DE after write. We save count
+     * and return it as bytes written on success. */
+    (void)fd; (void)buf; (void)count;
     __asm
-        ld      hl, #2
-        add     hl, sp
-        ld      a, (hl)         ; fd
-        inc     hl
-        inc     hl
-        ld      e, (hl)         ; buf low
-        inc     hl
-        ld      d, (hl)         ; buf high
-        inc     hl
-        ld      c, (hl)         ; count low
-        inc     hl
-        ld      b, (hl)         ; count high
-        push    bc
-        pop     hl              ; HL = count
-        ex      de, hl          ; DE = count, HL = buf
-        ld      c, #0x14        ; DSS.Write
         push    ix
+        ex      de, hl          ; HL = buf
+        ld      iy, #4
+        add     iy, sp
+        ld      e, 0 (iy)
+        ld      d, 1 (iy)      ; DE = count
+        push    de              ; save count (emulator doesn't return DE)
+        ld      c, #0x14
         rst     #0x10
+        pop     de              ; DE = count (workaround for emulator bug)
         pop     ix
         jr      c, _dss_write_err
-        ex      de, hl          ; bytes written
-        ret
+        ; return DE = count written
+        pop     iy
+        inc     sp
+        inc     sp
+        jp      (iy)
 _dss_write_err:
-        ld      hl, #-1
-        ret
+        ld      de, #0xFFFF
+        pop     iy
+        inc     sp
+        inc     sp
+        jp      (iy)
     __endasm;
 }
 
 i16 dss_seek(u8 fd, u32 offset, u8 origin) __naked {
+    /* fd in A, offset(4) + origin(1) on stack = 5 bytes. Callee cleans 5 bytes. */
+    (void)fd; (void)offset; (void)origin;
     __asm
-        ld      hl, #2
-        add     hl, sp
-        ld      a, (hl)         ; fd
-        inc     hl
-        inc     hl
-        ld      e, (hl)         ; offset byte 0 (low)
-        inc     hl
-        ld      d, (hl)         ; offset byte 1
-        inc     hl
-        push    de              ; save low word
-        ld      e, (hl)         ; offset byte 2
-        inc     hl
-        ld      d, (hl)         ; offset byte 3 (high)
-        inc     hl
-        ld      b, (hl)         ; origin
-        ; DE = high word, stack has low word
-        pop     hl              ; HL = low word of offset
-        ld      c, #0x15        ; DSS.Seek
         push    ix
+        ld      iy, #4
+        add     iy, sp
+        ld      l, 0 (iy)
+        ld      h, 1 (iy)      ; HL = offset low word
+        push    hl
+        pop     ix              ; IX = offset low word
+        ld      l, 2 (iy)
+        ld      h, 3 (iy)      ; HL = offset high word
+        ld      b, 4 (iy)      ; origin
+        ld      c, #0x15
         rst     #0x10
         pop     ix
         jr      c, _dss_seek_err
-        ld      hl, #0
-        ret
+        ld      de, #0
+        pop     iy
+        ld      hl, #5
+        add     hl, sp
+        ld      sp, hl
+        jp      (iy)
 _dss_seek_err:
-        ld      hl, #-1
-        ret
+        ld      de, #0xFFFF
+        pop     iy
+        ld      hl, #5
+        add     hl, sp
+        ld      sp, hl
+        jp      (iy)
     __endasm;
 }
 
-u8 dss_delete(const char *path) __z88dk_fastcall __naked {
+u8 dss_delete(const char *path) __naked {
+    /* path in HL. No stack params. */
     __asm
-        ld      c, #0x0B        ; DSS.Delete
+        push    ix
+        ld      c, #0x0E
         rst     #0x10
+        pop     ix
         jr      c, _dss_del_err
-        ld      l, #0
+        xor     a
         ret
 _dss_del_err:
-        ld      l, a
         ret
     __endasm;
 }
 
 u8 dss_rename(const char *oldpath, const char *newpath) __naked {
+    /* oldpath in HL, newpath in DE. No stack params. */
     __asm
-        ld      hl, #2
-        add     hl, sp
-        ld      e, (hl)         ; oldpath low
-        inc     hl
-        ld      d, (hl)         ; oldpath high
-        inc     hl
-        ld      a, (hl)         ; newpath low -> will go to DE
-        inc     hl
-        ld      b, (hl)         ; newpath high
-        ex      de, hl          ; HL = oldpath
-        ld      d, b
-        ld      e, a            ; DE = newpath
-        ld      c, #0x0C        ; DSS.Rename
+        push    ix
+        ld      c, #0x10
         rst     #0x10
+        pop     ix
         jr      c, _dss_ren_err
-        ld      l, #0
+        xor     a
         ret
 _dss_ren_err:
-        ld      l, a
         ret
     __endasm;
 }
 
-u8 dss_chdir(const char *path) __z88dk_fastcall __naked {
+u8 dss_chdir(const char *path) __naked {
+    /* path in HL. No stack params. */
     __asm
-        ld      c, #0x0E        ; DSS.ChDir
+        push    ix
+        ld      c, #0x1D
         rst     #0x10
+        pop     ix
         jr      c, _dss_cd_err
-        ld      l, #0
+        xor     a
         ret
 _dss_cd_err:
-        ld      l, a
         ret
     __endasm;
 }
@@ -339,91 +354,86 @@ _dss_cd_err:
 /* ===== Directory Search ===== */
 
 i8 dss_ffirst(const char *pattern, dss_find_t *result, u8 attr) __naked {
+    /* pattern in HL, result in DE, attr on stack (1 byte). Callee cleans 1 byte. */
+    (void)pattern; (void)result; (void)attr;
     __asm
-        ld      hl, #2
-        add     hl, sp
-        ld      e, (hl)         ; pattern low
-        inc     hl
-        ld      d, (hl)         ; pattern high
-        inc     hl
-        push    de              ; save pattern
-        ld      e, (hl)         ; result low
-        inc     hl
-        ld      d, (hl)         ; result high
-        inc     hl
-        ld      a, (hl)         ; attr
-        pop     hl              ; HL = pattern
-        ld      b, #1           ; format "filename.ext"
-        ld      c, #0x19        ; DSS.FFirst
         push    ix
+        ld      iy, #4
+        add     iy, sp
+        ld      a, 0 (iy)      ; attr
+        ld      b, #1
+        ld      c, #0x19
         rst     #0x10
         pop     ix
         jr      c, _dss_ff_err
-        ld      l, #0
-        ret
+        xor     a
+        pop     iy
+        inc     sp
+        jp      (iy)
 _dss_ff_err:
-        ld      l, #-1
-        ret
+        ld      a, #0xFF
+        pop     iy
+        inc     sp
+        jp      (iy)
     __endasm;
 }
 
-i8 dss_fnext(dss_find_t *result) __z88dk_fastcall __naked {
+i8 dss_fnext(dss_find_t *result) __naked {
+    /* result in HL. No stack params. */
     __asm
-        ex      de, hl          ; DE = result buffer
-        ld      c, #0x1A        ; DSS.FNext
         push    ix
+        ex      de, hl
+        ld      c, #0x1A
         rst     #0x10
         pop     ix
         jr      c, _dss_fn_err
-        ld      l, #0
+        xor     a
         ret
 _dss_fn_err:
-        ld      l, #-1
+        ld      a, #0xFF
         ret
     __endasm;
 }
 
 /* ===== Date / Time ===== */
 
-void dss_getdate(dss_date_t *d) __z88dk_fastcall __naked {
+void dss_getdate(dss_date_t *d) __naked {
     __asm
-        push    hl              ; save pointer
-        ld      c, #0x21        ; DSS.SysTime
         push    ix
+        push    hl
+        ld      c, #0x21
         rst     #0x10
-        pop     ix
-        ; IX = year, D = day, E = month
-        pop     hl              ; restore pointer
         push    ix
-        pop     bc              ; BC = year
-        ld      (hl), c         ; year low
+        pop     bc
+        pop     hl
+        ld      (hl), c
         inc     hl
-        ld      (hl), b         ; year high
+        ld      (hl), b
         inc     hl
-        ld      (hl), d         ; day
+        ld      (hl), d
         inc     hl
-        ld      (hl), e         ; month
+        ld      (hl), e
+        pop     ix
         ret
     __endasm;
 }
 
-void dss_gettime(dss_time_t *t) __z88dk_fastcall __naked {
+void dss_gettime(dss_time_t *t) __naked {
     __asm
-        push    hl              ; save pointer
-        ld      c, #0x21        ; DSS.SysTime
         push    ix
+        push    hl
+        ld      c, #0x21
         rst     #0x10
+        ex      de, hl
+        pop     hl
+        ld      (hl), e
+        inc     hl
+        ld      (hl), d
+        inc     hl
+        ld      (hl), #0
+        inc     hl
+        ld      (hl), b
         pop     ix
-        ; HL = hours:minutes, B = seconds
-        ex      de, hl          ; DE = hours:minutes
-        pop     hl              ; restore pointer
-        ld      (hl), e         ; minute
-        inc     hl
-        ld      (hl), d         ; hour
-        inc     hl
-        ld      (hl), #0        ; hundredths (unused)
-        inc     hl
-        ld      (hl), b         ; seconds
         ret
     __endasm;
 }
@@ -447,53 +457,55 @@ void dss_di(void) __naked {
 /* ===== Memory Management ===== */
 
 void dss_setwin(u8 win, u8 page) __naked {
+    /* win in A, page in L. No stack params. */
     __asm
-        ld      hl, #2
-        add     hl, sp
-        ld      a, (hl)         ; win
-        inc     hl
-        inc     hl
-        ld      b, (hl)         ; page
-        ld      c, #0x38        ; DSS.SetWin
+        push    ix
+        ld      b, l
+        ld      c, #0x38
         rst     #0x10
+        pop     ix
         ret
     __endasm;
 }
 
 u8 dss_getmem(void) __naked {
     __asm
-        ld      c, #0x3D        ; DSS.GetMem
+        push    ix
+        ld      c, #0x3D
         rst     #0x10
+        pop     ix
         jr      c, _dss_gm_err
-        ld      l, a            ; page number
         ret
 _dss_gm_err:
-        ld      l, #0xFF
+        ld      a, #0xFF
         ret
     __endasm;
 }
 
-void dss_freemem(u8 page) __z88dk_fastcall __naked {
+void dss_freemem(u8 page) __naked {
     __asm
-        ld      a, l            ; page number
-        ld      c, #0x3E        ; DSS.FreeMem
+        push    ix
+        ld      c, #0x3E
         rst     #0x10
+        pop     ix
         ret
     __endasm;
 }
 
 /* ===== Program Execution ===== */
 
-i16 dss_exec(const char *path) __z88dk_fastcall __naked {
+i16 dss_exec(const char *path) __naked {
     __asm
-        ld      c, #0x40        ; DSS.Exec
+        push    ix
+        ld      c, #0x40
         rst     #0x10
+        pop     ix
         jr      c, _dss_exec_err
-        ld      l, a
-        ld      h, #0
+        ld      e, a
+        ld      d, #0
         ret
 _dss_exec_err:
-        ld      hl, #-1
+        ld      de, #0xFFFF
         ret
     __endasm;
 }

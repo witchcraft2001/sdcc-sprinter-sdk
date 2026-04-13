@@ -27,15 +27,15 @@
 #define DSS_READ        0x13    /* Read from file */
 #define DSS_WRITE       0x14    /* Write to file */
 #define DSS_SEEK        0x15    /* Seek in file */
-#define DSS_DELETE      0x0B    /* Delete file */
-#define DSS_RENAME      0x0C    /* Rename file */
+#define DSS_DELETE      0x0E    /* Delete file */
+#define DSS_RENAME      0x10    /* Rename file */
 
 /* Directories */
 #define DSS_FFIRST      0x19    /* Find first file */
 #define DSS_FNEXT       0x1A    /* Find next file */
 #define DSS_MKDIR       0x1B    /* Create directory */
-#define DSS_CHDIR       0x0E    /* Change directory */
-#define DSS_CURDIR      0x1C    /* Get current directory */
+#define DSS_CHDIR       0x1D    /* Change directory */
+#define DSS_CURDIR      0x1E    /* Get current directory */
 
 /* Time */
 #define DSS_SYSTIME     0x21    /* Get system time/date */
@@ -123,13 +123,13 @@ typedef struct {
 /* ===== Functions ===== */
 
 /** Exit program with error code */
-void dss_exit(u8 code) __z88dk_fastcall;
+void dss_exit(u8 code);
 
 /** Print a single character to console */
-void dss_putchar(u8 ch) __z88dk_fastcall;
+void dss_putchar(u8 ch);
 
 /** Print a null-terminated string to console */
-void dss_puts(const char *str) __z88dk_fastcall;
+void dss_puts(const char *str);
 
 /** Wait for a key press, return character code */
 u8 dss_waitkey(void);
@@ -150,7 +150,7 @@ void dss_clrscr(void);
 u8 dss_getdisk(void);
 
 /** Set current disk */
-void dss_setdisk(u8 disk) __z88dk_fastcall;
+void dss_setdisk(u8 disk);
 
 /** Open file, returns file descriptor or -1 on error */
 i16 dss_open(const char *path, u8 mode);
@@ -159,7 +159,7 @@ i16 dss_open(const char *path, u8 mode);
 i16 dss_creat(const char *path);
 
 /** Close file descriptor */
-u8 dss_close(u8 fd) __z88dk_fastcall;
+u8 dss_close(u8 fd);
 
 /** Read from file. Returns bytes actually read, or -1 on error */
 i16 dss_read(u8 fd, void *buf, u16 count);
@@ -171,25 +171,25 @@ i16 dss_write(u8 fd, const void *buf, u16 count);
 i16 dss_seek(u8 fd, u32 offset, u8 origin);
 
 /** Delete file. Returns 0 on success */
-u8 dss_delete(const char *path) __z88dk_fastcall;
+u8 dss_delete(const char *path);
 
 /** Rename file */
 u8 dss_rename(const char *oldpath, const char *newpath);
 
 /** Change directory */
-u8 dss_chdir(const char *path) __z88dk_fastcall;
+u8 dss_chdir(const char *path);
 
 /** Find first matching file */
 i8 dss_ffirst(const char *pattern, dss_find_t *result, u8 attr);
 
 /** Find next matching file */
-i8 dss_fnext(dss_find_t *result) __z88dk_fastcall;
+i8 dss_fnext(dss_find_t *result);
 
 /** Get system date */
-void dss_getdate(dss_date_t *d) __z88dk_fastcall;
+void dss_getdate(dss_date_t *d);
 
 /** Get system time */
-void dss_gettime(dss_time_t *t) __z88dk_fastcall;
+void dss_gettime(dss_time_t *t);
 
 /** Enable interrupts */
 void dss_ei(void);
@@ -207,10 +207,10 @@ void dss_setwin(u8 win, u8 page);
 u8 dss_getmem(void);
 
 /** Free a memory page */
-void dss_freemem(u8 page) __z88dk_fastcall;
+void dss_freemem(u8 page);
 
 /** Execute a program. Returns exit code */
-i16 dss_exec(const char *path) __z88dk_fastcall;
+i16 dss_exec(const char *path);
 
 /** Get pointer to saved command line */
 char *dss_cmdline(void);

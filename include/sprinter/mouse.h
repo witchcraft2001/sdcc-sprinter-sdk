@@ -51,7 +51,7 @@ void mouse_show(void);
 void mouse_hide(void);
 
 /** Get current mouse state */
-void mouse_stat(mouse_state_t *state) __z88dk_fastcall;
+void mouse_stat(mouse_state_t *state);
 
 /** Set mouse cursor position */
 void mouse_setpos(u16 x, u16 y);

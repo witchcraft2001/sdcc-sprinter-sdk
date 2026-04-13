@@ -1,127 +1,94 @@
 /**
- * mouse.c — Mouse driver wrappers for SDCC
+ * mouse.c — Mouse driver wrappers for SDCC sdcccall(1)
  *
- * Mouse API via RST #30 vector.
+ * Mouse API via RST #30 — save/restore IX around all calls.
  */
 
 #include <sprinter/mouse.h>
 
 u8 mouse_init(void) __naked {
     __asm
-        ld      c, #0x00        ; MS_INIT
+        push    ix
+        ld      c, #0x00
         rst     #0x30
-        ld      l, a            ; number of buttons
+        pop     ix
         ret
     __endasm;
 }
 
 void mouse_show(void) __naked {
     __asm
-        ld      c, #0x01        ; MS_SHOW
+        push    ix
+        ld      c, #0x01
         rst     #0x30
+        pop     ix
         ret
     __endasm;
 }
 
 void mouse_hide(void) __naked {
     __asm
-        ld      c, #0x02        ; MS_HIDE
+        push    ix
+        ld      c, #0x02
         rst     #0x30
+        pop     ix
         ret
     __endasm;
 }
 
-void mouse_stat(mouse_state_t *state) __z88dk_fastcall __naked {
+void mouse_stat(mouse_state_t *state) __naked {
+    /* state in HL */
     __asm
-        push    hl              ; save state pointer
-        ld      c, #0x03        ; MS_STAT
+        push    ix
+        push    hl
+        ld      c, #0x03
         rst     #0x30
-        ; Returns: A = buttons, HL = X, DE = Y
-        pop     bc              ; BC = state pointer
-        push    bc
-        push    hl              ; save X
-        push    de              ; save Y
-        pop     hl              ; HL = Y
-        ex      (sp), hl        ; stack=Y, HL=X
-        ex      de, hl          ; DE = X
-        pop     hl              ; HL = Y
-        push    hl              ; re-save Y
-        ; Now: A=buttons, DE=X, on stack=Y
-        pop     hl              ; HL = Y
-        push    hl              ; save Y again
-        ; Write to struct via BC pointer
-        ld      h, b
-        ld      l, c            ; HL = state pointer
+        ; A=buttons, HL=X, DE=Y
+        ex      (sp), hl        ; stack=X, HL=state ptr
         ld      (hl), a         ; buttons
         inc     hl
-        ld      (hl), e         ; x low
+        pop     bc              ; BC=X
+        ld      (hl), c
         inc     hl
-        ld      (hl), d         ; x high
+        ld      (hl), b
         inc     hl
-        pop     de              ; DE = Y
-        ld      (hl), e         ; y low
+        ld      (hl), e         ; Y low
         inc     hl
-        ld      (hl), d         ; y high
+        ld      (hl), d         ; Y high
+        pop     ix
         ret
     __endasm;
 }
 
 void mouse_setpos(u16 x, u16 y) __naked {
+    /* x in HL, y in DE (2nd u16) */
     __asm
-        ld      hl, #2
-        add     hl, sp
-        ld      e, (hl)         ; x low
-        inc     hl
-        ld      d, (hl)         ; x high
-        inc     hl
-        push    de              ; save x
-        ld      e, (hl)         ; y low
-        inc     hl
-        ld      d, (hl)         ; y high
-        pop     hl              ; HL = x
-        ; HL = x, DE = y
-        ld      c, #0x04        ; MS_SETPOS
+        push    ix
+        ld      c, #0x04
         rst     #0x30
+        pop     ix
         ret
     __endasm;
 }
 
 void mouse_xbound(u16 min_x, u16 max_x) __naked {
+    /* min_x in HL, max_x in DE */
     __asm
-        ld      hl, #2
-        add     hl, sp
-        ld      e, (hl)         ; min_x low
-        inc     hl
-        ld      d, (hl)         ; min_x high
-        inc     hl
-        push    de              ; save min
-        ld      e, (hl)         ; max_x low
-        inc     hl
-        ld      d, (hl)         ; max_x high
-        pop     hl              ; HL = min_x
-        ; HL = min, DE = max
-        ld      c, #0x05        ; MS_XBOUND
+        push    ix
+        ld      c, #0x05
         rst     #0x30
+        pop     ix
         ret
     __endasm;
 }
 
 void mouse_ybound(u16 min_y, u16 max_y) __naked {
+    /* min_y in HL, max_y in DE */
     __asm
-        ld      hl, #2
-        add     hl, sp
-        ld      e, (hl)         ; min_y low
-        inc     hl
-        ld      d, (hl)         ; min_y high
-        inc     hl
-        push    de              ; save min
-        ld      e, (hl)         ; max_y low
-        inc     hl
-        ld      d, (hl)         ; max_y high
-        pop     hl              ; HL = min_y
-        ; HL = min, DE = max
-        ld      c, #0x06        ; MS_YBOUND
+        push    ix
+        ld      c, #0x06
         rst     #0x30
+        pop     ix
         ret
     __endasm;
 }

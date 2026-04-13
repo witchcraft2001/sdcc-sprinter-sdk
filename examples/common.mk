@@ -12,7 +12,7 @@ PYTHON      ?= python3
 
 BUILD       = _build
 SDCC_TARGET = -mz80
-SDCC_FLAGS  = $(SDCC_TARGET) --sdcccall 0 --max-allocs-per-node 5000 --opt-code-speed
+SDCC_FLAGS  = $(SDCC_TARGET) --max-allocs-per-node 5000 --opt-code-speed
 INC         = -I$(SDK_DIR)include
 CRT0        = $(SDK_DIR)build/crt0.rel
 LIB_RELS    = $(wildcard $(SDK_DIR)build/dss.rel $(SDK_DIR)build/bios.rel \
@@ -31,7 +31,7 @@ $(BUILD)/%.rel: %.c | $(BUILD)
 	$(SDCC) $(SDCC_FLAGS) $(INC) -c -o $@ $<
 
 $(BUILD)/$(APP).ihx: $(CRT0) $(LIB_RELS) $(APP_RELS)
-	$(SDCC) $(SDCC_TARGET) --no-std-crt0 --sdcccall 0 --code-loc 0x8100 --data-loc 0x4000 \
+	$(SDCC) $(SDCC_TARGET) --no-std-crt0 --code-loc 0x8100 --data-loc 0x4000 \
 		--max-allocs-per-node 5000 --opt-code-speed \
 		$(INC) \
 		$(CRT0) $(LIB_RELS) $(APP_RELS) \

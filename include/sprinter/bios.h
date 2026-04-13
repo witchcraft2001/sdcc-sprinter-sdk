@@ -78,7 +78,7 @@ u16 bios_version(void);
 u8 bios_board_id(void);
 
 /** Read I/O port */
-u8 inp(u16 port) __z88dk_fastcall;
+u8 inp(u16 port);
 
 /** Write I/O port */
 void outp(u16 port, u8 value);

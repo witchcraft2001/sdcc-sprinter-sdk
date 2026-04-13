@@ -29,7 +29,7 @@
 #define VRAM_ONLY           0x04    /* Write to VRAM only */
 
 /** Set graphics video mode */
-void video_setmode(u8 mode) __z88dk_fastcall;
+void video_setmode(u8 mode);
 
 /** Get current video mode */
 u8 video_getmode(void);
