@@ -14,56 +14,70 @@
 /* ===== DSS Function Numbers ===== */
 
 /* System */
-#define DSS_VERSION     0x00
-#define DSS_ENABLE      0x01    /* Enable interrupts */
+#define DSS_VERSION     0x00    /* Get DSS version */
+#define DSS_SETDISK     0x01    /* Set current disk */
 #define DSS_GETDISK     0x02    /* Get current disk */
-#define DSS_SETDISK     0x03    /* Set current disk (in custom impl) */
-#define DSS_GETENV      0x10    /* Get environment */
+#define DSS_DISKINF     0x03    /* Get disk info */
 
 /* Files */
 #define DSS_CREAT       0x0A    /* Create file */
+#define DSS_CREAT_N     0x0B    /* Create new (fail if exists) */
+#define DSS_DELETE      0x0E    /* Delete file */
+#define DSS_RENAME      0x10    /* Rename file */
 #define DSS_OPEN        0x11    /* Open file */
 #define DSS_CLOSE       0x12    /* Close file */
 #define DSS_READ        0x13    /* Read from file */
 #define DSS_WRITE       0x14    /* Write to file */
 #define DSS_SEEK        0x15    /* Seek in file */
-#define DSS_DELETE      0x0E    /* Delete file */
-#define DSS_RENAME      0x10    /* Rename file */
+#define DSS_ATTRIB      0x16    /* Get/set file attributes */
+#define DSS_GET_D_T     0x17    /* Get file date/time */
+#define DSS_PUT_D_T     0x18    /* Set file date/time */
 
 /* Directories */
 #define DSS_FFIRST      0x19    /* Find first file */
 #define DSS_FNEXT       0x1A    /* Find next file */
 #define DSS_MKDIR       0x1B    /* Create directory */
+#define DSS_RMDIR       0x1C    /* Remove directory */
 #define DSS_CHDIR       0x1D    /* Change directory */
 #define DSS_CURDIR      0x1E    /* Get current directory */
 
 /* Time */
-#define DSS_SYSTIME     0x21    /* Get system time/date */
-#define DSS_SETTIME     0x22    /* Set system time/date */
+#define DSS_SYSTIME     0x21    /* Get system date/time */
+#define DSS_SETTIME     0x22    /* Set system date/time */
 
 /* Keyboard */
 #define DSS_WAITKEY     0x30    /* Wait for key press */
 #define DSS_SCANKEY     0x31    /* Scan keyboard (non-blocking) */
 #define DSS_GETCHE      0x32    /* Get key with echo */
 #define DSS_KBHIT       0x33    /* Check if key pressed */
+#define DSS_K_CLEAR     0x35    /* Clear keyboard buffer */
 
 /* Memory */
 #define DSS_SETWIN      0x38    /* Set memory window page */
+#define DSS_MEMINFO     0x3C    /* Get memory info (total/free) */
 #define DSS_GETMEM      0x3D    /* Allocate memory page */
 #define DSS_FREEMEM     0x3E    /* Free memory page */
+#define DSS_SETMEM      0x3F    /* Resize memory block */
 
 /* Process */
 #define DSS_EXEC        0x40    /* Execute program */
 #define DSS_EXIT        0x41    /* Exit program */
+#define DSS_WAIT        0x42    /* Wait for child process */
+#define DSS_DOSNAME     0x44    /* Get DSS file name */
+#define DSS_EX_PATH     0x45    /* Parse path components */
+#define DSS_ENVIRON     0x46    /* Environment variables */
+#define DSS_APPINFO     0x47    /* Application information */
 
 /* Video */
 #define DSS_SETVMOD     0x50    /* Set video mode */
 #define DSS_GETVMOD     0x51    /* Get video mode */
 #define DSS_LOCATE      0x52    /* Set cursor position */
+#define DSS_CURSOR      0x53    /* Cursor control */
+#define DSS_SELPAGE     0x54    /* Select video page */
+#define DSS_SCROLL      0x55    /* Scroll screen area */
+#define DSS_CLEAR       0x56    /* Clear screen area */
 #define DSS_PUTCHAR     0x5B    /* Output character */
 #define DSS_PUTSTR      0x5C    /* Output string */
-#define DSS_SCROLL      0x55    /* Scroll screen */
-#define DSS_CLEAR       0x56    /* Clear screen area */
 
 /* ===== File Open Modes ===== */
 #define O_RDONLY        0x00
@@ -120,10 +134,45 @@ typedef struct {
 } dss_time_t;
 
 
+/* ===== EX_PATH subfunctions ===== */
+#define EXPATH_ALL      0       /* Extract all components */
+#define EXPATH_DRIVE    1       /* Extract drive */
+#define EXPATH_PATH     2       /* Extract path */
+#define EXPATH_NAME     3       /* Extract filename */
+#define EXPATH_EXT      4       /* Extract extension */
+
+/* ===== APPINFO subfunctions ===== */
+#define APPINFO_PARAMS  0       /* Get command line parameters */
+#define APPINFO_DIR     1       /* Get application directory */
+#define APPINFO_FULL    2       /* Get full application path */
+
+/* ===== Scroll directions ===== */
+#define SCROLL_UP       1
+#define SCROLL_DOWN     2
+
 /* ===== Functions ===== */
+
+/* --- System --- */
+
+/** Get DSS version. Returns (major << 8) | minor */
+u16 dss_version(void);
 
 /** Exit program with error code */
 void dss_exit(u8 code);
+
+/** Enable interrupts */
+void dss_ei(void);
+
+/** Disable interrupts */
+void dss_di(void);
+
+/** Get current disk number (0=A:, 1=B:, 2=C:, ...) */
+u8 dss_getdisk(void);
+
+/** Set current disk */
+void dss_setdisk(u8 disk);
+
+/* --- Console I/O --- */
 
 /** Print a single character to console */
 void dss_putchar(u8 ch);
@@ -146,11 +195,7 @@ void dss_gotoxy(u8 x, u8 y);
 /** Clear screen */
 void dss_clrscr(void);
 
-/** Get current disk number */
-u8 dss_getdisk(void);
-
-/** Set current disk */
-void dss_setdisk(u8 disk);
+/* --- File I/O --- */
 
 /** Open file, returns file descriptor or -1 on error */
 i16 dss_open(const char *path, u8 mode);
@@ -170,14 +215,25 @@ i16 dss_write(u8 fd, const void *buf, u16 count);
 /** Seek in file. Returns 0 on success, -1 on error */
 i16 dss_seek(u8 fd, u32 offset, u8 origin);
 
-/** Delete file. Returns 0 on success */
+/** Delete file. Returns 0 on success, error code otherwise */
 u8 dss_delete(const char *path);
 
-/** Rename file */
+/** Rename file. Returns 0 on success */
 u8 dss_rename(const char *oldpath, const char *newpath);
 
-/** Change directory */
+/* --- Directories --- */
+
+/** Change directory. Returns 0 on success */
 u8 dss_chdir(const char *path);
+
+/** Get current directory path into buf. Returns 0 on success */
+u8 dss_curdir(char *buf);
+
+/** Create directory. Returns 0 on success */
+u8 dss_mkdir(const char *path);
+
+/** Remove directory. Returns 0 on success */
+u8 dss_rmdir(const char *path);
 
 /** Find first matching file */
 i8 dss_ffirst(const char *pattern, dss_find_t *result, u8 attr);
@@ -185,17 +241,18 @@ i8 dss_ffirst(const char *pattern, dss_find_t *result, u8 attr);
 /** Find next matching file */
 i8 dss_fnext(dss_find_t *result);
 
+/* --- Date/Time --- */
+
 /** Get system date */
 void dss_getdate(dss_date_t *d);
 
 /** Get system time */
 void dss_gettime(dss_time_t *t);
 
-/** Enable interrupts */
-void dss_ei(void);
+/** Set system date and time (both required in single call) */
+void dss_settime(dss_date_t *d, dss_time_t *t);
 
-/** Disable interrupts */
-void dss_di(void);
+/* --- Memory --- */
 
 /** Set memory window page.
  *  win: 0-3 (memory window number)
@@ -209,10 +266,57 @@ u8 dss_getmem(void);
 /** Free a memory page */
 void dss_freemem(u8 page);
 
-/** Execute a program. Returns exit code */
+/** Get memory info: total and free page counts */
+void dss_meminfo(u16 *total, u16 *free_pages);
+
+/* --- Video --- */
+
+/** Set video mode. Returns 0 on success.
+ *  mode: see VMODE_* constants in video.h
+ *  page: 0 or 1
+ */
+u8 dss_setvmod(u8 mode, u8 page);
+
+/** Get current video mode and page */
+void dss_getvmod(u8 *mode, u8 *page);
+
+/** Scroll screen area.
+ *  dir: SCROLL_UP (1) or SCROLL_DOWN (2)
+ *  count: number of lines to scroll (0 = clear line)
+ */
+void dss_scroll(u8 x, u8 y, u8 w, u8 h, u8 dir, u8 count);
+
+/** Clear screen area with color and attribute */
+void dss_clear(u8 x, u8 y, u8 w, u8 h, u8 color, u8 attr);
+
+/* --- Process --- */
+
+/** Execute a program. Returns exit code or -1 on error */
 i16 dss_exec(const char *path);
 
 /** Get pointer to saved command line */
 char *dss_cmdline(void);
+
+/** Parse path into components.
+ *  subfunc: EXPATH_DRIVE, EXPATH_PATH, EXPATH_NAME, EXPATH_EXT, or EXPATH_ALL
+ *  Returns 0 on success, -1 on error.
+ */
+i8 dss_expath(const char *path, char *buf, u8 subfunc);
+
+/** Get application info.
+ *  subfunc: APPINFO_PARAMS (0), APPINFO_DIR (1), or APPINFO_FULL (2)
+ *  Returns 0 on success, -1 on error.
+ */
+i8 dss_appinfo(u8 subfunc, char *buf);
+
+/* --- Environment --- */
+
+/** Get environment variable value. Returns 0 on success, -1 if not found */
+i8 dss_getenv(const char *name, char *buf);
+
+/** Set environment variable. name_value format: "NAME=VALUE"
+ *  Returns 0 on success, -1 on error.
+ */
+i8 dss_setenv(const char *namevalue);
 
 #endif /* _SPRINTER_DSS_H */

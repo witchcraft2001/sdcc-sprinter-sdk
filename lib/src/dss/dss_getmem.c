@@ -3,6 +3,7 @@
 u8 dss_getmem(void) __naked {
     __asm
         push    ix
+        ld      b, #1           ; allocate 1 page
         ld      c, #0x3D
         rst     #0x10
         pop     ix
