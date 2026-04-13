@@ -41,7 +41,7 @@ typedef struct {
 
 /* ===== Functions ===== */
 
-/** Initialize mouse driver. Returns number of buttons or 0 if no mouse */
+/** Initialize mouse driver. Returns 1 if mouse present, 0 if absent */
 u8 mouse_init(void);
 
 /** Show mouse cursor */

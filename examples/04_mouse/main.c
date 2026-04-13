@@ -31,16 +31,14 @@ void main(void) {
     dss_puts("=== Mouse Example ===\r\n\r\n");
 
     buttons = mouse_init();
-    if (buttons == 0) {
+    if (!buttons) {
         dss_puts("No mouse detected!\r\n");
         dss_puts("Press any key to exit.\r\n");
         dss_waitkey();
         return;
     }
 
-    dss_puts("Mouse found: ");
-    print_num(buttons);
-    dss_puts(" buttons\r\n\r\n");
+    dss_puts("Mouse found!\r\n\r\n");
 
     /* Set boundaries */
     mouse_xbound(0, 319);

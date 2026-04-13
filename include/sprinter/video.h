@@ -9,10 +9,13 @@
 
 #include <sprinter/types.h>
 
-/* Video modes (PORT_GFXMODE bits 0-1) */
-#define VMODE_ZX        0x00    /* ZX Spectrum compatible (256x192) */
-#define VMODE_320       0x01    /* 320x256, 256 colors (8bpp) */
-#define VMODE_640       0x02    /* 640x256, 16 colors (4bpp) */
+/* Video modes for DSS SETVMOD (bit 7: 0=text, 1=graphics) */
+#define VMODE_TEXT40    0x02    /* Text 40x32, 16 colors */
+#define VMODE_TEXT80    0x03    /* Text 80x32, 16 colors */
+#define VMODE_ZX        0x03    /* Alias: default text mode (80x32) */
+#define VMODE_320_16    0x80    /* 320x256, 16 colors */
+#define VMODE_320       0x81    /* 320x256, 256 colors (8bpp) */
+#define VMODE_640       0x82    /* 640x256, 16 colors */
 
 /* Screen dimensions */
 #define SCREEN_W_320    320
