@@ -22,8 +22,8 @@
 #define BIOS_SCROLL     0x86    /* Scroll text window */
 
 /* Graphics */
-#define BIOS_PUTPIXEL   0xA0    /* Put pixel */
-#define BIOS_SETPAL     0xA1    /* Set palette entry */
+#define BIOS_PUTPIXEL   0xA1    /* Put pixel: HL=X, DE=Y, B=color */
+#define BIOS_SETPAL     0xA4    /* Set palette: HL=index, D=R, E=G, A=B */
 
 /* Windows */
 #define BIOS_OPENWIN    0xB0    /* Open text window */
@@ -58,9 +58,9 @@
 
 /* ===== Functions ===== */
 
-/** Set palette color.
- *  index: color index (0-63 in 320x256 mode, 0-15 in 640x256 mode)
- *  r, g, b: color components (0-3, 2-bit each)
+/** Set a single palette entry via BIOS #A4.
+ *  index: color index (0-255)
+ *  r, g, b: color components (0-63 each, 6-bit)
  */
 void bios_setpal(u8 index, u8 r, u8 g, u8 b);
 

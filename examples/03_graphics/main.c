@@ -1,76 +1,59 @@
 /**
- * 03_graphics — Graphics mode example for ZX Sprinter
+ * 03_graphics — Graphics demo for ZX Sprinter
  *
- * Demonstrates 320x256 graphics mode with palette and pixel drawing.
- * Draws a color gradient, some shapes, and waits for key.
+ * 320x256, 256 colors. BIOS #A6 GRAF palette.
+ * Draws palette bars, frame, and gradient.
  */
 
 #include <sprinter.h>
 
-/* Draw a filled rectangle using BIOS putpixel */
-static void fill_rect(u16 x, u8 y, u16 w, u8 h, u8 color) {
-    u16 cx;
-    u8 cy;
-    for (cy = y; cy < y + h; cy++) {
-        for (cx = x; cx < x + w; cx++) {
-            bios_putpixel(cx, cy, color);
-        }
-    }
-}
-
-/* Draw a horizontal line */
-static void hline(u16 x, u8 y, u16 len, u8 color) {
-    u16 i;
-    for (i = 0; i < len; i++) {
-        bios_putpixel(x + i, y, color);
-    }
-}
-
-/* Draw a vertical line */
-static void vline(u16 x, u8 y, u8 len, u8 color) {
-    u8 i;
-    for (i = 0; i < len; i++) {
-        bios_putpixel(x, y + i, color);
-    }
+/* Set built-in GRAF palette via BIOS #A6 (B=1) */
+static void set_graf_palette(void) {
+    __asm
+        push    ix
+        ld      b, #1
+        ld      e, #0
+        xor     a
+        ld      c, #0xA6
+        rst     #0x08
+        pop     ix
+    __endasm;
 }
 
 void main(void) {
-    u8 i, y;
+    u8 y, c;
     u16 x;
 
-    /* Switch to 320x256 graphics mode */
     video_setmode(VMODE_320);
+    set_graf_palette();
 
-    /* Set up a 64-color palette: 4R x 4G x 4B = 64 colors */
-    for (i = 0; i < 64; i++) {
-        u8 r = (i >> 4) & 3;
-        u8 g = (i >> 2) & 3;
-        u8 b = i & 3;
-        video_setpal(i, r, g, b);
-    }
-
-    /* Draw color palette bars at top */
-    for (i = 0; i < 64; i++) {
-        fill_rect((u16)i * 5, 0, 5, 20, i);
-    }
-
-    /* Draw a frame */
-    hline(10, 30, 300, 63);     /* white top */
-    hline(10, 230, 300, 63);    /* white bottom */
-    vline(10, 30, 200, 63);     /* white left */
-    vline(309, 30, 200, 63);    /* white right */
-
-    /* Draw gradient pattern inside frame */
-    for (y = 40; y < 220; y++) {
-        for (x = 20; x < 300; x++) {
-            u8 color = (u8)(((x - 20) + (u16)(y - 40)) & 63);
-            bios_putpixel(x, y, color);
+    /* Palette bars: 16 bars of 20px wide, 16px tall */
+    for (c = 0; c < 16; c++) {
+        for (y = 4; y < 20; y++) {
+            for (x = (u16)c * 20; x < (u16)c * 20 + 20; x++) {
+                bios_putpixel(x, y, c * 16 + 8);
+            }
         }
     }
 
-    /* Wait for key press */
-    dss_waitkey();
+    /* White frame */
+    for (x = 0; x < 320; x++) {
+        bios_putpixel(x, 28, 255);
+        bios_putpixel(x, 240, 255);
+    }
+    for (y = 28; y < 241; y++) {
+        bios_putpixel(0, y, 255);
+        bios_putpixel(319, y, 255);
+    }
 
-    /* Restore text mode before exit */
-    video_setmode(VMODE_ZX);
+    /* Diagonal color gradient inside frame */
+    for (y = 30; y < 240; y++) {
+        for (x = 2; x < 318; x++) {
+            bios_putpixel(x, y, (u8)((x + (u16)y) & 255));
+        }
+    }
+
+    video_safe_porty();
+    dss_waitkey();
+    video_setmode(VMODE_TEXT80);
 }

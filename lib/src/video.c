@@ -56,6 +56,14 @@ void video_setpal(u8 index, u8 r, u8 g, u8 b) {
     bios_setpal(index, r, g, b);
 }
 
+void video_safe_porty(void) __naked {
+    __asm
+        ld      a, #0xC0
+        out     (#0x89), a
+        ret
+    __endasm;
+}
+
 void video_mapvram(u8 win, u8 page) __naked {
     /* win in A, page in L (2nd u8, 1st in A) */
     __asm
