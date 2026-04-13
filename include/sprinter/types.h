@@ -23,13 +23,12 @@ typedef signed int          i16;
 typedef unsigned long       u32;
 typedef signed long         i32;
 
+/* Standard definitions */
+#include <stddef.h>
+#include <stdbool.h>
+
 /* Classic types */
 typedef unsigned char       byte;
 typedef unsigned int        word;
-typedef unsigned char       bool;
-
-#define true    1
-#define false   0
-#define NULL    ((void *)0)
 
 #endif /* _SPRINTER_TYPES_H */
