@@ -1,9 +1,12 @@
-/* puts.c — print string + newline to stdout */
+/* puts.c — print string + newline to stdout
+ * Goes through fputc for \n -> \r\n conversion.
+ * SDCC may optimize printf("str\n") -> puts("str"),
+ * so puts must handle newlines correctly. */
 #include <stdio.h>
-#include <sprinter/dss.h>
 
 int puts(const char *s) {
-    dss_puts(s);
-    dss_putchar('\n');
+    while (*s)
+        fputc(*s++, stdout);
+    fputc('\n', stdout);
     return 0;
 }

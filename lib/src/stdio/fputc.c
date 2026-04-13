@@ -9,7 +9,8 @@ int fputc(int c, FILE *fp) {
     if (!(fp->flags & _F_OPEN) || !(fp->flags & _F_WRITE))
         return EOF;
     if (fp->fd == 0xFF) {
-        /* Console output */
+        /* Console output — text mode: \n -> \r\n */
+        if (c == '\n') dss_putchar('\r');
         dss_putchar((u8)c);
     } else if (fp->fd == 0xFE) {
         /* sprintf buffer */
