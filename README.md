@@ -8,9 +8,12 @@ Cross-platform C development toolkit for the **ZX Sprinter** computer (Z80 CPU, 
 - **SDCC 4.x compiler** for Z80 — free, open-source, cross-platform (macOS/Linux/Windows)
 - **sjasmplus 1.22** assembler — for mixed C+ASM projects
 - **Sprinter hardware API** — DSS OS calls, BIOS, video modes, mouse driver, port I/O
+- **Compatibility headers** — `io.h`, `dos.h`, `dir.h` for easy porting from Turbo C / SOLID C
 - **Granular linking** — each function in a separate module; linker includes only what's used
-- **13 example programs** with Makefiles — from "Hello World" to sorting algorithms and graphics
+- **14 example programs** with Makefiles — from "Hello World" to cross-compiler benchmark
 - **ihx2exe.py** tool — converts SDCC output to Sprinter `.EXE` format
+- **ihx2bin.py** tool — converts SDCC output to raw binary (for overlays and resident code)
+- **Raw binary support** — build code fragments for loading at arbitrary addresses
 - Works on **macOS, Linux, Windows** (MSYS2/MinGW)
 
 ## Quick Start
@@ -87,10 +90,11 @@ make tools
 | 07 | fileio | 3.7 KB | Standard I/O: `fopen` / `fwrite` / `fread` / `fclose` / `remove` |
 | 08 | sort | 4.3 KB | Sorting algorithms: Bubble, Shell, Quick sort (ported from SOLID C) |
 | 09 | dirlist | 2.9 KB | Directory listing via `dss_ffirst` / `dss_fnext` |
-| 10 | bin2c | 3.6 KB | Utility: converts binary file to C byte array |
-| 11 | fprintf | 3.6 KB | `fprintf()` to file + `fgets()` readback |
+| 10 | bin2c | 4.0 KB | Utility: converts binary file to C byte array (CLI args) |
+| 11 | fprintf | 3.7 KB | `fprintf()` to file + `fgets()` readback |
 | 12 | strings | 3.6 KB | `string.h` + `ctype.h` functions demo |
-| 13 | random | 3.3 KB | `stdlib.h` demo: `rand()`, `srand()`, `atoi()`, `abs()` |
+| 13 | random | 3.4 KB | `stdlib.h` demo: `rand()`, `srand()`, `atoi()`, `abs()` |
+| 14 | bench | 4.7 KB | Cross-compiler benchmark (Sieve, Sort, CRC-16, RC4, etc.) |
 
 ## Documentation
 
@@ -204,15 +208,6 @@ The SDK provides standard C headers for easy porting of existing programs. Funct
 
 **printf format support:** `%d`, `%i`, `%u`, `%x`, `%X`, `%s`, `%c`, `%%`, field width, zero-padding, left-align. The `%l` modifier is accepted (for forward compatibility) but integer conversions are 16-bit. No floating point.
 
-### `<stdlib.h>` — Utility Functions
-
-| Function | Description |
-|----------|-------------|
-| `exit(code)` | Exit program |
-| `atoi(s)` | String to integer |
-| `abs(n)` | Absolute value |
-| `rand()` / `srand(seed)` | Pseudo-random numbers |
-
 ### `<string.h>` — String Operations
 
 | Function | Description |
@@ -227,6 +222,17 @@ The SDK provides standard C headers for easy porting of existing programs. Funct
 
 `isalpha`, `isdigit`, `isalnum`, `isspace`, `isupper`, `islower`, `isprint`, `isxdigit`, `iscntrl`, `ispunct`, `toupper`, `tolower`
 
+### `<stdlib.h>` — Utility Functions
+
+| Function | Description |
+|----------|-------------|
+| `exit(code)` | Exit program |
+| `atoi(s)` | String to integer |
+| `abs(n)` | Absolute value |
+| `rand()` / `srand(seed)` | Pseudo-random numbers |
+| `getenv(name)` | Get environment variable (returns `char*`) |
+| `putenv(s)` | Set environment variable (`"NAME=VALUE"`) |
+
 ### `<conio.h>` — Console I/O (CP/M / Turbo C compatible)
 
 | Function | Description |
@@ -239,6 +245,16 @@ The SDK provides standard C headers for easy porting of existing programs. Funct
 | `cprintf(fmt, ...)` | Formatted console output |
 | `clrscr()` | Clear screen |
 | `gotoxy(x, y)` | Set cursor position |
+
+### Compatibility Headers (Turbo C / SOLID C)
+
+These headers provide zero-overhead macro aliases for easy porting:
+
+**`<io.h>`** — Low-level file I/O: `open`, `close`, `read`, `write`, `lseek`
+
+**`<dos.h>`** — DOS interface: `getdate`, `gettime`, `enable`, `disable`, `getdisk`, `setdisk`, `struct date`, `struct time`
+
+**`<dir.h>`** — Directory operations: `mkdir`, `rmdir`, `chdir`, `getcwd`, `getcurdir`, `findfirst`, `findnext`, `fnsplit`
 
 ## Sprinter Hardware API
 
@@ -265,12 +281,28 @@ For direct hardware access, use the Sprinter-specific headers. These are indepen
 | `dss_chdir(path)` | Change directory |
 | `dss_ffirst(pat, res, attr)` | Find first file |
 | `dss_fnext(res)` | Find next file |
-| `dss_getdate(d)` / `dss_gettime(t)` | Date/time |
+| `dss_getdate(d)` / `dss_gettime(t)` | Get date/time |
+| `dss_settime(d, t)` | Set system date and time |
 | `dss_exec(path)` | Run program |
 | `dss_exit(code)` | Exit program |
+| `dss_cmdline()` | Get command line arguments |
 | `dss_setwin(win, page)` | Map memory page |
-| `dss_getmem()` / `dss_freemem(page)` | Memory management |
-| `dss_ei()` / `dss_di()` | Interrupts |
+| `dss_getmem()` / `dss_freemem(page)` | Allocate/free memory page |
+| `dss_meminfo(&total, &free)` | Get memory info (total/free pages) |
+| `dss_ei()` / `dss_di()` | Enable/disable interrupts |
+| `dss_version()` | Get DSS version |
+| `dss_mkdir(path)` / `dss_rmdir(path)` | Create/remove directory |
+| `dss_curdir(buf)` | Get current directory |
+| `dss_setvmod(mode, page)` | Set video mode |
+| `dss_getvmod(&mode, &page)` | Get video mode |
+| `dss_scroll(x,y,w,h,dir,n)` | Scroll screen area |
+| `dss_clear(x,y,w,h,clr,attr)` | Clear screen area |
+| `dss_getenv(name, buf)` | Get environment variable |
+| `dss_setenv(namevalue)` | Set environment variable |
+| `dss_appinfo(subfunc, buf)` | Get application info (path, params) |
+| `dss_expath(path, buf, sub)` | Parse path into components |
+| `dss_call(addr)` | Call code at address (saves IX) |
+| `dss_callp(addr, param)` | Call code at address with parameter |
 
 ### `<sprinter/bios.h>` — BIOS & Hardware
 
@@ -305,6 +337,47 @@ For direct hardware access, use the Sprinter-specific headers. These are indepen
 | `mouse_xbound(min, max)` | Set X boundaries |
 | `mouse_ybound(min, max)` | Set Y boundaries |
 
+## Building Raw Binaries
+
+For resident programs, overlays, or code fragments that run at arbitrary addresses, use `ihx2bin.py` and `common_bin.mk`:
+
+```makefile
+APP      = overlay
+SRCS     = overlay.c
+CODE_LOC = 0xC000
+include $(SDK_DIR)examples/common_bin.mk
+```
+
+This produces a raw `.bin` file (no EXE header, no CRT0) ready to load at the specified address.
+
+### Loading and executing at runtime
+
+```c
+#include <sprinter.h>
+
+void main(void) {
+    u8 page = dss_getmem();              /* allocate RAM page */
+    dss_setwin(3, page);                 /* map to WIN3 (0xC000) */
+
+    /* Load binary into mapped memory */
+    i16 fd = dss_open("OVERLAY.BIN", O_RDONLY);
+    dss_read((u8)fd, (void*)0xC000, 4096);
+    dss_close((u8)fd);
+
+    u16 result = dss_call(0xC000);       /* execute code */
+
+    dss_freemem(page);                   /* free page */
+}
+```
+
+`dss_call(addr)` saves/restores IX (SDCC frame pointer). `dss_callp(addr, param)` passes a parameter on the stack.
+
+### Manual conversion
+
+```bash
+python3 tools/ihx2bin.py output.ihx output.bin --org 0xC000
+```
+
 ## Memory Map
 
 DSS allocates 3 pages (WIN1, WIN2, WIN3) for each program. Default layout (`CODE_LOC=0x4100`):
@@ -338,6 +411,9 @@ sdcc-sprinter-sdk/
 │   ├── string.h            # String operations
 │   ├── ctype.h             # Character classification
 │   ├── conio.h             # Console I/O (CP/M compatible)
+│   ├── io.h                # Low-level I/O (Turbo C / SOLID C compat)
+│   ├── dos.h               # DOS interface (Turbo C / SOLID C compat)
+│   ├── dir.h               # Directory ops (Turbo C / SOLID C compat)
 │   ├── stddef.h            # size_t, NULL
 │   ├── stdbool.h           # bool, true, false
 │   ├── sprinter.h          # Umbrella header (all Sprinter APIs)
@@ -351,25 +427,28 @@ sdcc-sprinter-sdk/
 ├── lib/
 │   ├── crt0.s              # C runtime startup
 │   └── src/
-│       ├── dss/            # DSS wrappers (30 modules)
+│       ├── dss/            # DSS wrappers (45 modules)
 │       ├── bios/           # BIOS wrappers (6 modules)
 │       ├── video/          # Video functions (7 modules)
 │       ├── mouse/          # Mouse functions (7 modules)
 │       ├── stdio/          # Standard I/O (17 modules)
-│       ├── stdlib/         # Standard library (4 modules)
+│       ├── stdlib/         # Standard library (5 modules)
 │       ├── string/         # String functions (12 modules)
 │       ├── ctype/          # Character functions (12 modules)
-│       └── conio/          # Console I/O (8 modules)
+│       ├── conio/          # Console I/O (8 modules)
+│       └── dir/            # Directory compat wrappers (2 modules)
 ├── tools/
-│   ├── ihx2exe.py          # Intel HEX → Sprinter EXE converter (Python 3)
+│   ├── ihx2exe.py          # Intel HEX → Sprinter EXE converter
+│   ├── ihx2bin.py          # Intel HEX → raw binary converter
 │   ├── install-sdcc.sh     # SDCC installer script
 │   └── build-sjasmplus.sh  # sjasmplus build script
-├── examples/               # 13 example programs
-│   ├── common.mk           # Shared build rules
-│   ├── 01_hello/ .. 13_random/
+├── examples/               # 14 example programs
+│   ├── common.mk           # Shared build rules (EXE output)
+│   ├── common_bin.mk       # Build rules for raw binary modules
+│   ├── 01_hello/ .. 14_bench/
 ├── build/
 │   ├── crt0.rel            # Compiled CRT0
-│   └── sprinter.lib        # Library archive (~103 modules)
+│   └── sprinter.lib        # Library archive (125 modules)
 └── scripts/
     ├── copy_exe.sh          # Copy EXE files to target directory
     └── make_floppy.sh       # Create FAT12 floppy image

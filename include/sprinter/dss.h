@@ -297,6 +297,17 @@ i16 dss_exec(const char *path);
 /** Get pointer to saved command line */
 char *dss_cmdline(void);
 
+/** Call code at given address. Saves/restores IX (SDCC frame pointer).
+ *  Returns value left in HL by called code.
+ */
+u16 dss_call(u16 addr);
+
+/** Call code at given address with parameter pushed on stack.
+ *  Called code can read param via: pop hl (ret addr), pop de (param), push hl.
+ *  Returns value left in HL by called code.
+ */
+u16 dss_callp(u16 addr, u16 param);
+
 /** Parse path into components.
  *  subfunc: EXPATH_DRIVE, EXPATH_PATH, EXPATH_NAME, EXPATH_EXT, or EXPATH_ALL
  *  Returns 0 on success, -1 on error.
