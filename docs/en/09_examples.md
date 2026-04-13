@@ -1,0 +1,193 @@
+# Examples
+
+The SDK includes 13 example programs demonstrating various SDK features. All examples are in the `examples/` directory, each with its own `main.c` and `Makefile`.
+
+## Building Examples
+
+Build all examples at once:
+
+```bash
+make examples
+```
+
+Build a single example:
+
+```bash
+cd examples/01_hello
+make
+```
+
+Each example produces an `.exe` file (e.g., `hello.exe`) that can be copied to the Sprinter and run from the DSS command line.
+
+## Example List
+
+### 01_hello -- Hello World (681 B)
+
+The simplest possible Sprinter program. Uses `dss_puts()` for output and `dss_waitkey()` to pause.
+
+```c
+#include <sprinter.h>
+
+void main(void) {
+    dss_puts("Hello from ZX Sprinter!\r\n");
+    dss_puts("SDCC SDK v1.0\r\n");
+    dss_puts("\r\nPress any key to exit...\r\n");
+    dss_waitkey();
+}
+```
+
+**Demonstrates:** minimal program structure, `<sprinter.h>`, DSS console output.
+
+### 02_files -- Low-Level File I/O (1.4 KB)
+
+Creates a file, writes data, reads it back, and deletes it using DSS file functions.
+
+**Demonstrates:** `dss_creat()`, `dss_write()`, `dss_open()`, `dss_read()`, `dss_close()`, `dss_delete()`.
+
+### 03_graphics -- Graphics Mode (853 B)
+
+Switches to 320x256, 256-color mode. Sets the GRAF palette via BIOS #A6. Draws palette bars, a white frame, and a diagonal color gradient.
+
+**Demonstrates:** `video_setmode()`, `bios_putpixel()`, BIOS palette preset, `video_safe_porty()`, inline assembly.
+
+### 04_mouse -- Mouse Input (1.3 KB)
+
+Initializes the mouse driver, shows the cursor, and tracks position/buttons in real-time. Exit by pressing a key or right-clicking.
+
+**Demonstrates:** `mouse_init()`, `mouse_show()`, `mouse_hide()`, `mouse_stat()`, `mouse_xbound()`, `mouse_ybound()`, `mouse_state_t`, `dss_kbhit()`.
+
+### 05_keyinput -- System Info and Keyboard (1.4 KB)
+
+Displays BIOS version, board ID, current disk, date/time, then enters a keyboard echo loop. Press ESC to exit.
+
+**Demonstrates:** `bios_version()`, `bios_board_id()`, `dss_getdisk()`, `dss_getdate()`, `dss_gettime()`, `dss_waitkey()`, keyboard handling.
+
+### 06_printf -- printf Demo (2.8 KB)
+
+Demonstrates `printf()` format specifiers: `%d`, `%X`, `%s`.
+
+```c
+#include <stdio.h>
+
+void main(void) {
+    int num = 2004;
+    printf("Hello world!\n");
+    printf("Year: %d\n", num);
+    printf("Hex: 0x%X\n", num);
+    printf("String: %s\n", "test");
+    puts("\nPress any key...");
+    getchar();
+}
+```
+
+**Demonstrates:** `<stdio.h>`, `printf()`, `puts()`, `getchar()`. Shows the code size impact of the printf engine.
+
+### 07_fileio -- Standard File I/O (3.7 KB)
+
+Creates a file using `fopen("w")`, writes with `fwrite()`, reads back with `fread()`, then deletes with `remove()`.
+
+**Demonstrates:** `fopen()`, `fclose()`, `fread()`, `fwrite()`, `remove()`, `<string.h>` (`strlen`, `memset`).
+
+### 08_sort -- Sorting Algorithms (4.3 KB)
+
+Implements Bubble Sort, Shell Sort, and Quick Sort. Fills arrays with random numbers, sorts them, and prints statistics (iterations, exchanges, conditions). Ported from SOLID C's SORT2.C.
+
+**Demonstrates:** `printf()`, `cprintf()`, `cputs()`, `rand()`, `srand()`, `getch()`, recursion (quicksort), porting from SOLID C.
+
+### 09_dirlist -- Directory Listing (2.9 KB)
+
+Lists all files in the current directory using `dss_ffirst()` / `dss_fnext()`.
+
+```c
+#include <stdio.h>
+#include <sprinter/dss.h>
+
+void main(void) {
+    dss_find_t entry;
+    printf("Directory listing: *.*\n\n");
+    if (dss_ffirst("*.*", &entry, 0x20) == 0) {
+        do {
+            printf("%s\n", entry.ff_name);
+        } while (dss_fnext(&entry) == 0);
+    }
+    printf("\nDone. Press any key.\n");
+    getchar();
+}
+```
+
+**Demonstrates:** `dss_ffirst()`, `dss_fnext()`, `dss_find_t`, mixing standard and Sprinter APIs.
+
+### 10_bin2c -- Binary to C Array (3.6 KB)
+
+Reads a binary file and outputs its contents as a C array declaration (`unsigned char data[] = { 0x00, 0x01, ... };`). Useful for embedding binary data in C programs.
+
+**Demonstrates:** `fopen()`, `fgetc()`, `printf()` formatting, interactive input with `getchar()`.
+
+### 11_fprintf -- fprintf to File (3.6 KB)
+
+Writes formatted text to a file using `fprintf()`, then reads it back with `fgets()` and displays it.
+
+**Demonstrates:** `fprintf()`, `fgets()`, file creation and reading, `remove()`.
+
+### 12_strings -- String and Character Functions (3.6 KB)
+
+Exercises `string.h` functions (`strlen`, `strcmp`, `strcpy`, `strcat`, `strchr`) and `ctype.h` functions (`isalpha`, `isdigit`, `isupper`, `toupper`).
+
+**Demonstrates:** `<string.h>`, `<ctype.h>`, all major string operations.
+
+### 13_random -- Random Numbers and stdlib (3.3 KB)
+
+Demonstrates `stdlib.h` functions: `abs()`, `atoi()`, `rand()`, `srand()`. Generates and displays random numbers with different seeds.
+
+**Demonstrates:** `<stdlib.h>`, `rand()`, `srand()`, `atoi()`, `abs()`.
+
+## Creating Your Own Example
+
+1. Create a new directory:
+
+```bash
+mkdir examples/14_myproject
+```
+
+2. Create `main.c`:
+
+```c
+#include <stdio.h>
+
+void main(void) {
+    printf("My project works!\n");
+    getchar();
+}
+```
+
+3. Create a `Makefile` with three lines:
+
+```makefile
+APP  = myproject
+SRCS = main.c
+include ../common.mk
+```
+
+4. Build:
+
+```bash
+cd examples/14_myproject
+make
+```
+
+5. The result is `myproject.exe`, ready to run on the Sprinter.
+
+### Using an External Project Directory
+
+You can place your project anywhere on disk. Just point `SDK_DIR` to the SDK root:
+
+```makefile
+APP      = myapp
+SRCS     = main.c render.c input.c
+SDK_DIR  = /Users/me/sdcc-sprinter-sdk/
+include $(SDK_DIR)examples/common.mk
+```
+
+### Adding Assembly Files
+
+For mixed C+ASM projects, compile `.s` files separately and add them as extra `.rel` files. You will need to extend the Makefile beyond `common.mk` for this. See the sjasmplus documentation and SDCC manual for details on mixing C and assembly.

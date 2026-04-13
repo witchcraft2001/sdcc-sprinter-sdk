@@ -1,0 +1,231 @@
+# Примеры
+
+SDK включает 13 готовых примеров, демонстрирующих различные возможности -- от простейшего "Hello World" до алгоритмов сортировки и графики.
+
+## Список примеров
+
+| # | Каталог | Размер | Описание |
+|---|---------|--------|----------|
+| 01 | `01_hello` | 681 Б | Минимальная программа -- `dss_puts()` |
+| 02 | `02_files` | 1.4 КБ | Низкоуровневый файловый ввод-вывод DSS (создание/запись/чтение/удаление) |
+| 03 | `03_graphics` | 853 Б | Графический режим 320x256 с палитрой и рисованием пикселей |
+| 04 | `04_mouse` | 1.3 КБ | Драйвер мыши: инициализация, курсор, отслеживание позиции |
+| 05 | `05_keyinput` | 1.4 КБ | Системная информация (версия BIOS, дата/время) + эхо клавиатуры |
+| 06 | `06_printf` | 2.8 КБ | Демонстрация `printf()` / `puts()` / `getchar()` |
+| 07 | `07_fileio` | 3.7 КБ | Стандартный ввод-вывод: `fopen` / `fwrite` / `fread` / `fclose` / `remove` |
+| 08 | `08_sort` | 4.3 КБ | Алгоритмы сортировки: Bubble, Shell, Quick sort (портировано из SOLID C) |
+| 09 | `09_dirlist` | 2.9 КБ | Листинг каталога через `dss_ffirst` / `dss_fnext` |
+| 10 | `10_bin2c` | 3.6 КБ | Утилита: конвертация бинарного файла в Си-массив |
+| 11 | `11_fprintf` | 3.6 КБ | `fprintf()` в файл + `fgets()` для обратного чтения |
+| 12 | `12_strings` | 3.6 КБ | Демонстрация функций `string.h` + `ctype.h` |
+| 13 | `13_random` | 3.3 КБ | Демонстрация `stdlib.h`: `rand()`, `srand()`, `atoi()`, `abs()` |
+
+## Сборка и запуск
+
+### Сборка всех примеров
+
+```bash
+cd sdcc-sprinter-sdk
+make            # сначала собрать библиотеку
+make examples   # затем собрать все примеры
+```
+
+### Сборка одного примера
+
+```bash
+cd examples/01_hello
+make SDK_DIR=../../
+```
+
+или из корня SDK:
+
+```bash
+make -C examples/01_hello SDK_DIR=$(pwd)/
+```
+
+### Запуск
+
+Скопируйте файл `.exe` на диск Sprinter (реальный или эмулятор) и выполните из командной строки DSS:
+
+```
+A:\>HELLO.EXE
+```
+
+## Описание примеров
+
+### 01_hello -- Hello World
+
+Минимальная программа, использующая прямые вызовы DSS. Демонстрирует `dss_puts` и `dss_waitkey`.
+
+```c
+#include <sprinter.h>
+
+void main(void) {
+    dss_puts("Hello from ZX Sprinter!\r\n");
+    dss_puts("SDCC SDK v1.0\r\n");
+    dss_puts("\r\n");
+    dss_puts("Press any key to exit...\r\n");
+    dss_waitkey();
+}
+```
+
+**Размер: 681 байт** -- минимум, достижимый для Си-программы.
+
+### 02_files -- Файловый ввод-вывод DSS
+
+Демонстрирует низкоуровневую работу с файлами: `dss_creat`, `dss_write`, `dss_open`, `dss_read`, `dss_close`, `dss_delete`.
+
+### 03_graphics -- Графика 320x256
+
+Переключается в графический режим, устанавливает палитру GRAF, рисует цветовые полосы, рамку и диагональный градиент.
+
+Ключевые моменты:
+- `video_setmode(VMODE_320)` -- установка графического режима
+- `bios_putpixel(x, y, color)` -- рисование точки
+- `video_safe_porty()` -- обязательный сброс PORT_Y после рисования
+- `video_setmode(VMODE_TEXT80)` -- возврат в текстовый режим
+
+### 04_mouse -- Работа с мышью
+
+Инициализирует драйвер мыши, устанавливает границы, показывает курсор и в цикле выводит координаты и состояние кнопок.
+
+```c
+mouse_init();                  /* Инициализация */
+mouse_xbound(0, 319);         /* Границы по X */
+mouse_ybound(0, 255);         /* Границы по Y */
+mouse_show();                  /* Показать курсор */
+
+while (1) {
+    mouse_stat(&ms);           /* Получить состояние */
+    /* ms.x, ms.y, ms.buttons */
+    if (ms.buttons & MS_BTN_RIGHT)
+        break;
+}
+
+mouse_hide();                  /* Скрыть курсор */
+```
+
+### 05_keyinput -- Клавиатура и системная информация
+
+Выводит версию BIOS, дату и время, затем в цикле отображает коды нажатых клавиш.
+
+### 06_printf -- Форматированный вывод
+
+Демонстрирует возможности `printf`: целые числа, шестнадцатеричный вывод, строки.
+
+```c
+#include <stdio.h>
+
+void main(void) {
+    int num = 2004;
+    printf("Hello world!\n");
+    printf("Year: %d\n", num);
+    printf("Hex: 0x%X\n", num);
+    printf("String: %s\n", "test");
+    puts("\nPress any key...");
+    getchar();
+}
+```
+
+### 07_fileio -- Стандартный файловый ввод-вывод
+
+Работа с файлами через стандартные функции `fopen`, `fwrite`, `fread`, `fclose`, `remove`.
+
+### 08_sort -- Алгоритмы сортировки
+
+Портирование SORT2.C из SOLID C. Реализует три алгоритма сортировки (Bubble, Shell, Quick) и собирает статистику: количество итераций, обменов, сравнений.
+
+Этот пример особенно полезен как образец портирования из SOLID C (см. [07 -- Перенос с SOLID C](07_перенос_с_solidc.md)).
+
+### 09_dirlist -- Листинг каталога
+
+Выводит список файлов текущего каталога через `dss_ffirst` / `dss_fnext`.
+
+```c
+#include <stdio.h>
+#include <sprinter/dss.h>
+
+void main(void) {
+    dss_find_t entry;
+    printf("Directory listing: *.*\n\n");
+    if (dss_ffirst("*.*", &entry, 0x20) == 0) {
+        do {
+            printf("%s\n", entry.ff_name);
+        } while (dss_fnext(&entry) == 0);
+    }
+    printf("\nDone. Press any key.\n");
+    getchar();
+}
+```
+
+### 10_bin2c -- Конвертер бинарных файлов
+
+Утилита для преобразования бинарного файла в Си-массив байт (`unsigned char data[] = { ... }`). Полезно для встраивания ресурсов (шрифты, спрайты) в код.
+
+### 11_fprintf -- Форматированный вывод в файл
+
+Демонстрирует `fprintf` для записи форматированных данных в файл и `fgets` для их обратного чтения.
+
+### 12_strings -- Работа со строками
+
+Демонстрирует функции `string.h` (strlen, strcpy, strcmp, strcat, memcpy, memset) и `ctype.h` (isalpha, isdigit, toupper, tolower).
+
+### 13_random -- Генерация случайных чисел
+
+Демонстрирует функции `stdlib.h`: генератор псевдослучайных чисел (`rand`/`srand`), преобразование строки в число (`atoi`), абсолютное значение (`abs`).
+
+## Создание своего примера
+
+### 1. Создайте каталог
+
+```bash
+mkdir examples/14_myapp
+```
+
+### 2. Создайте исходный файл
+
+Файл `examples/14_myapp/main.c`:
+
+```c
+#include <stdio.h>
+
+void main(void) {
+    printf("My first Sprinter program!\n");
+    getchar();
+}
+```
+
+### 3. Создайте Makefile
+
+Файл `examples/14_myapp/Makefile`:
+
+```makefile
+APP      = myapp
+SRCS     = main.c
+SDK_DIR  ?= ../../
+include $(SDK_DIR)examples/common.mk
+```
+
+### 4. Соберите
+
+```bash
+cd examples/14_myapp
+make SDK_DIR=../../
+```
+
+Результат: `myapp.exe` -- готовый исполняемый файл для Sprinter.
+
+### Проект вне дерева SDK
+
+Создать проект можно в любом каталоге -- достаточно указать путь к SDK:
+
+```makefile
+APP      = myapp
+SRCS     = main.c utils.c
+SDK_DIR  = /path/to/sdcc-sprinter-sdk/
+include $(SDK_DIR)examples/common.mk
+```
+
+```bash
+make
+```

@@ -92,6 +92,18 @@ make tools
 | 12 | strings | 3.6 KB | `string.h` + `ctype.h` functions demo |
 | 13 | random | 3.3 KB | `stdlib.h` demo: `rand()`, `srand()`, `atoi()`, `abs()` |
 
+## Documentation
+
+Full SDK documentation is available in the `docs/` directory:
+
+- **[English](docs/en/)** — installation, standard library, Sprinter API, graphics, porting from SOLID C, memory & linking
+- **[Русский](docs/ru/)** — установка, стандартная библиотека, API Sprinter, графика, портирование с SOLID C, память и линковка
+
+Key chapters:
+- [Porting from SOLID C](docs/en/07_porting_from_solidc.md) — header/function/type mapping, step-by-step migration guide
+- [Standard Library Reference](docs/en/04_standard_library.md) — stdio.h, stdlib.h, string.h, ctype.h, conio.h
+- [Graphics Guide](docs/en/06_graphics_guide.md) — 320x256 mode, palette, VRAM pixel drawing
+
 ## Creating Your Own Project
 
 ### Using Standard C (recommended for portability)
