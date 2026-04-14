@@ -21,9 +21,10 @@ static void set_graf_palette(void) {
 }
 
 void main(void) {
-    u8 y, c;
+    u8 y, c, saved_mode;
     u16 x;
 
+    saved_mode = video_getmode();
     video_setmode(VMODE_320);
     set_graf_palette();
 
@@ -55,5 +56,5 @@ void main(void) {
 
     video_safe_porty();
     dss_waitkey();
-    video_setmode(VMODE_TEXT80);
+    video_setmode(saved_mode);
 }
