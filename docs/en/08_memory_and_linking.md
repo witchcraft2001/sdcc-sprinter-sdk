@@ -128,6 +128,7 @@ Offset  Size  Description
 
 The header contains:
 
+- EXE version (`exe_ver = 1`, current format)
 - Load address (0x8100)
 - Entry point (0x8100)
 - Program size

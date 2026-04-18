@@ -26,6 +26,11 @@ import struct
 import argparse
 
 
+EXE_SIGNATURE = b'EXE'
+EXE_VERSION = 0x01
+EXE_HEADER_SIZE = 512
+
+
 def parse_ihx(filename):
     """Parse Intel HEX file, return dict of address -> byte."""
     data = {}
@@ -70,14 +75,14 @@ def make_exe(data, load_addr=0x8100, entry=0x8100, stack=0xBFFF):
             code[offset] = byte
 
     # Build 512-byte EXE header (matching SprintEXE struct)
-    header = bytearray(512)
+    header = bytearray(EXE_HEADER_SIZE)
 
     # +0x00: "EXE" signature (3 bytes)
-    header[0:3] = b'EXE'
+    header[0:3] = EXE_SIGNATURE
     # +0x03: version (1 byte)
-    header[3] = 0x01
+    header[3] = EXE_VERSION
     # +0x04: offset — file offset to code start (uint32 LE)
-    struct.pack_into('<I', header, 0x04, 512)
+    struct.pack_into('<I', header, 0x04, EXE_HEADER_SIZE)
     # +0x08: loader size (uint16 LE, 0 = no loader)
     struct.pack_into('<H', header, 0x08, 0)
     # +0x0A: loader2 / reserved
@@ -115,11 +120,12 @@ def main():
     with open(args.output, 'wb') as f:
         f.write(exe)
 
-    code_size = len(exe) - 512
+    code_size = len(exe) - EXE_HEADER_SIZE
     print(f"Created {args.output}: {len(exe)} bytes "
-          f"(header: 512, code: {code_size})")
+          f"(header: {EXE_HEADER_SIZE}, code: {code_size})")
     print(f"  Load: 0x{args.load:04X}, Entry: 0x{args.entry:04X}, "
           f"Stack: 0x{args.stack:04X}")
+    print(f"  EXE version: {EXE_VERSION}")
 
 
 if __name__ == '__main__':
