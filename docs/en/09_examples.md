@@ -1,6 +1,6 @@
 # Examples
 
-The SDK includes 13 example programs demonstrating various SDK features. All examples are in the `examples/` directory, each with its own `main.c` and `Makefile`.
+The SDK includes 15 example programs demonstrating various SDK features. All examples are in the `examples/` directory, each with its own `main.c` and `Makefile`.
 
 ## Building Examples
 
@@ -141,12 +141,38 @@ Demonstrates `stdlib.h` functions: `abs()`, `atoi()`, `rand()`, `srand()`. Gener
 
 **Demonstrates:** `<stdlib.h>`, `rand()`, `srand()`, `atoi()`, `abs()`.
 
+### 14_bench -- Cross-Compiler Benchmark (4.7 KB)
+
+Runs a benchmark suite ported from SOLID C (sieve, sort, CRC-16, RC4 and others) to compare runtime and code size.
+
+**Demonstrates:** larger multi-function C application, performance-sensitive code paths, SOLID C compatibility patterns.
+
+### 15_exec -- EXEC and Error Reporting (~3 KB)
+
+Launches another `.EXE` with `dss_exec_ex()` and prints either child exit code or raw DSS launch error code.
+
+```c
+#include <stdio.h>
+#include <sprinter.h>
+
+void main(void) {
+    u8 err;
+    i16 rc = dss_exec_ex("CHILD.EXE arg1", &err);
+    if (rc < 0)
+        printf("EXEC failed: A=0x%X (%u)\n", (u16)err, (u16)err);
+    else
+        printf("Child exit code: %d\n", rc);
+}
+```
+
+**Demonstrates:** `dss_exec_ex()`, DSS `EXEC` error handling, interpreting child exit status.
+
 ## Creating Your Own Example
 
 1. Create a new directory:
 
 ```bash
-mkdir examples/14_myproject
+mkdir examples/16_myproject
 ```
 
 2. Create `main.c`:
@@ -171,7 +197,7 @@ include ../common.mk
 4. Build:
 
 ```bash
-cd examples/14_myproject
+cd examples/16_myproject
 make
 ```
 

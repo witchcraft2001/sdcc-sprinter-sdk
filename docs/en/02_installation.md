@@ -108,7 +108,7 @@ This compiles all library modules and creates:
 make examples
 ```
 
-This builds all 13 example programs. Each example produces an `.exe` file in its directory (e.g., `examples/01_hello/hello.exe`).
+This builds all 15 example programs. Each example produces an `.exe` file in its directory (e.g., `examples/01_hello/hello.exe`).
 
 ## Building sjasmplus (optional)
 
@@ -162,9 +162,9 @@ sdcc-sprinter-sdk/
 │   ├── ihx2exe.py           # Intel HEX → Sprinter EXE converter
 │   ├── install-sdcc.sh      # SDCC installer helper
 │   └── build-sjasmplus.sh   # sjasmplus build script
-├── examples/                # 13 example programs
+├── examples/                # 15 example programs
 │   ├── common.mk            # Shared Makefile rules
-│   ├── 01_hello/ .. 13_random/
+│   ├── 01_hello/ .. 15_exec/
 ├── scripts/
 │   ├── copy_exe.sh          # Copy EXE files to target directory
 │   └── make_floppy.sh       # Create FAT12 floppy image

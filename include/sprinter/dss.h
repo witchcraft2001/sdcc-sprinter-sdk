@@ -294,6 +294,12 @@ void dss_clear(u8 x, u8 y, u8 w, u8 h, u8 color, u8 attr);
 /** Execute a program. Returns exit code or -1 on error */
 i16 dss_exec(const char *path);
 
+/** Execute a program with raw DSS error capture.
+ *  On error returns -1 and stores DSS error code from A into *err (if err != 0).
+ *  On success returns child exit code and stores 0 into *err (if err != 0).
+ */
+i16 dss_exec_ex(const char *path, u8 *err);
+
 /** Get pointer to saved command line */
 char *dss_cmdline(void);
 

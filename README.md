@@ -10,7 +10,7 @@ Cross-platform C development toolkit for the **ZX Sprinter** computer (Z80 CPU, 
 - **Sprinter hardware API** — DSS OS calls, BIOS, video modes, mouse driver, port I/O
 - **Compatibility headers** — `io.h`, `dos.h`, `dir.h` for easy porting from Turbo C / SOLID C
 - **Granular linking** — each function in a separate module; linker includes only what's used
-- **14 example programs** with Makefiles — from "Hello World" to cross-compiler benchmark
+- **15 example programs** with Makefiles — from "Hello World" to EXEC/error handling demo
 - **ihx2exe.py** tool — converts SDCC output to Sprinter `.EXE` format
 - **ihx2bin.py** tool — converts SDCC output to raw binary (for overlays and resident code)
 - **Raw binary support** — build code fragments for loading at arbitrary addresses
@@ -95,6 +95,7 @@ make tools
 | 12 | strings | 3.6 KB | `string.h` + `ctype.h` functions demo |
 | 13 | random | 3.4 KB | `stdlib.h` demo: `rand()`, `srand()`, `atoi()`, `abs()` |
 | 14 | bench | 4.7 KB | Cross-compiler benchmark (Sieve, Sort, CRC-16, RC4, etc.) |
+| 15 | exec | ~3 KB | Run child `.EXE` via `dss_exec_ex()` and print exit/error code |
 
 ## Documentation
 
@@ -442,10 +443,10 @@ sdcc-sprinter-sdk/
 │   ├── ihx2bin.py          # Intel HEX → raw binary converter
 │   ├── install-sdcc.sh     # SDCC installer script
 │   └── build-sjasmplus.sh  # sjasmplus build script
-├── examples/               # 14 example programs
+├── examples/               # 15 example programs
 │   ├── common.mk           # Shared build rules (EXE output)
 │   ├── common_bin.mk       # Build rules for raw binary modules
-│   ├── 01_hello/ .. 14_bench/
+│   ├── 01_hello/ .. 15_exec/
 ├── build/
 │   ├── crt0.rel            # Compiled CRT0
 │   └── sprinter.lib        # Library archive (125 modules)

@@ -60,7 +60,7 @@ See [Porting from SOLID C](07_porting_from_solidc.md) for a detailed migration g
 - **Standard C library** -- `stdio.h`, `stdlib.h`, `string.h`, `ctype.h`, `conio.h`, `stddef.h`, `stdbool.h`
 - **Sprinter hardware API** -- DSS OS calls, BIOS functions, video modes, mouse driver, port I/O
 - **Selective linking** -- each function compiled as a separate module (~103 modules in `sprinter.lib`); the linker includes only what your program actually uses
-- **13 example programs** -- from "Hello World" to sorting algorithms and graphics demos
+- **15 example programs** -- from "Hello World" to EXEC/error handling demo
 - **Build tools** -- `ihx2exe.py` (Intel HEX to Sprinter EXE converter), `common.mk` (shared Makefile rules)
 - **Cross-platform** -- works on macOS, Linux, and Windows (MSYS2/MinGW)
 - **sjasmplus support** -- optional Z80 assembler for mixed C+ASM projects

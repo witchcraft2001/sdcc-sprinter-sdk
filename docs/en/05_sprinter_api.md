@@ -195,7 +195,28 @@ void dss_freemem(u8 page);          /* Free allocated page */
 ```c
 void dss_exit(u8 code);             /* Exit program */
 i16  dss_exec(const char *path);    /* Execute program, returns exit code */
+i16  dss_exec_ex(const char *path, u8 *err);  /* Execute program, keep raw DSS error */
 char *dss_cmdline(void);            /* Get saved command line pointer */
+```
+
+`dss_exec()` preserves compatibility with existing code: it returns child exit code on success, or `-1` on launch error.
+
+Use `dss_exec_ex()` when you need the exact DSS error code returned in register `A` on failure:
+
+```c
+#include <stdio.h>
+#include <sprinter.h>
+
+void main(void) {
+    u8 err;
+    i16 rc = dss_exec_ex("CHILD.EXE arg1", &err);
+
+    if (rc < 0) {
+        printf("EXEC failed, DSS error A=0x%X (%u)\n", (u16)err, (u16)err);
+    } else {
+        printf("Child exit code: %d\n", rc);
+    }
+}
 ```
 
 ### System

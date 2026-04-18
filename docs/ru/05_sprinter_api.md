@@ -164,11 +164,32 @@ typedef struct {
 ```c
 void dss_exit(u8 code);            /* Завершение программы */
 i16  dss_exec(const char *path);   /* Запуск другой программы */
+i16  dss_exec_ex(const char *path, u8 *err);  /* Запуск с возвратом кода ошибки DSS */
 void dss_ei(void);                 /* Разрешить прерывания */
 void dss_di(void);                 /* Запретить прерывания */
 u8   dss_getdisk(void);            /* Получить текущий диск */
 void dss_setdisk(u8 disk);         /* Установить текущий диск */
 char *dss_cmdline(void);           /* Указатель на командную строку */
+```
+
+`dss_exec()` сохраняет совместимость со старым кодом: при ошибке возвращает только `-1`.
+
+Если нужен точный код ошибки DSS (то, что DSS возвращает в регистре `A`), используйте `dss_exec_ex()`:
+
+```c
+#include <stdio.h>
+#include <sprinter.h>
+
+void main(void) {
+    u8 err;
+    i16 rc = dss_exec_ex("CHILD.EXE arg1", &err);
+
+    if (rc < 0) {
+        printf("EXEC error: A=0x%X (%u)\n", (u16)err, (u16)err);
+    } else {
+        printf("Код завершения дочерней программы: %d\n", rc);
+    }
+}
 ```
 
 ## BIOS API -- sprinter/bios.h

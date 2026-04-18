@@ -1,6 +1,7 @@
 #include <sprinter/dss.h>
 
 i16 dss_exec(const char *path) __naked {
+    (void)path;
     __asm
         push    ix
         ld      b, #0           ; subfunction: EXEC0 (auto path handling)
