@@ -32,8 +32,8 @@ static void print_hex8(u8 val) {
 void main(void) {
     dss_date_t date;
     dss_time_t time;
+    dss_key_t key;
     u16 ver;
-    u8 key;
     u8 disk;
 
     dss_clrscr();
@@ -80,23 +80,36 @@ void main(void) {
 
     /* Keyboard echo loop */
     dss_puts("\r\n--- Keyboard Echo ---\r\n");
-    dss_puts("Type characters (ESC to quit):\r\n\r\n");
+    dss_puts("Type characters (ESC to quit, Ctrl+X/Ctrl+Z shown with modifiers):\r\n\r\n");
 
     while (1) {
-        key = dss_waitkey();
+        dss_waitkey_ex(&key);
 
-        if (key == 27) {  /* ESC */
+        if (key.ascii == 27) {  /* ESC */
             break;
         }
 
-        if (key == 13) {  /* Enter */
+        if ((key.modifiers & DSS_KEYMOD_CTRL) &&
+            (key.ascii == 'X' || key.ascii == 'x' ||
+             key.ascii == 'Z' || key.ascii == 'z')) {
+            dss_puts("[CTRL+");
+            dss_putchar((key.ascii >= 'a' && key.ascii <= 'z') ? (key.ascii - 32) : key.ascii);
+            dss_puts(" mods=0x");
+            print_hex8(key.modifiers);
+            dss_putchar(']');
+        } else if (key.ascii == 13) {  /* Enter */
             dss_puts("\r\n");
-        } else if (key >= 32 && key < 127) {
-            dss_putchar(key);
+        } else if (key.ascii >= 32 && key.ascii < 127) {
+            dss_putchar(key.ascii);
         } else {
             /* Show hex code for special keys */
             dss_puts("[0x");
-            print_hex8(key);
+            print_hex8(key.ascii);
+            dss_puts(" mods=0x");
+            print_hex8(key.modifiers);
+            dss_putchar(' ');
+            dss_puts("scan=0x");
+            print_hex8(key.scan);
             dss_putchar(']');
         }
     }

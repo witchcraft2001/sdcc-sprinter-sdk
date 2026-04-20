@@ -51,6 +51,7 @@
 #define DSS_GETCHE      0x32    /* Get key with echo */
 #define DSS_KBHIT       0x33    /* Check if key pressed */
 #define DSS_K_CLEAR     0x35    /* Clear keyboard buffer */
+#define DSS_TESTKEY     0x37    /* Test keyboard buffer (non-destructive) */
 
 /* Memory */
 #define DSS_SETWIN      0x38    /* Set memory window page */
@@ -133,6 +134,14 @@ typedef struct {
     u8       second;
 } dss_time_t;
 
+/** Keyboard event returned by WAITKEY/SCANKEY/TESTKEY */
+typedef struct {
+    u8       ascii;       /* ASCII code */
+    u8       scan;        /* Position/scan code */
+    u8       modifiers;   /* Shift/Ctrl/Alt state */
+    u8       locks;       /* Caps/Num/Scroll/etc. state */
+} dss_key_t;
+
 
 /* ===== EX_PATH subfunctions ===== */
 #define EXPATH_ALL      0       /* Extract all components */
@@ -149,6 +158,23 @@ typedef struct {
 /* ===== Scroll directions ===== */
 #define SCROLL_UP       1
 #define SCROLL_DOWN     2
+
+/* ===== Keyboard modifier bits (dss_key_t.modifiers) ===== */
+#define DSS_KEYMOD_RALT     0x01
+#define DSS_KEYMOD_RCTRL    0x02
+#define DSS_KEYMOD_LALT     0x04
+#define DSS_KEYMOD_LCTRL    0x08
+#define DSS_KEYMOD_ALT      0x10
+#define DSS_KEYMOD_CTRL     0x20
+#define DSS_KEYMOD_RSHIFT   0x40
+#define DSS_KEYMOD_LSHIFT   0x80
+
+/* ===== Keyboard lock bits (dss_key_t.locks) ===== */
+#define DSS_KEYLOCK_CAPS    0x01
+#define DSS_KEYLOCK_INSERT  0x02
+#define DSS_KEYLOCK_SCROLL  0x04
+#define DSS_KEYLOCK_NUM     0x08
+#define DSS_KEYLOCK_RUSLAT  0x80
 
 /* ===== Functions ===== */
 
@@ -182,6 +208,15 @@ void dss_puts(const char *str);
 
 /** Wait for a key press, return character code */
 u8 dss_waitkey(void);
+
+/** Wait for a key press and return full keyboard state */
+void dss_waitkey_ex(dss_key_t *key);
+
+/** Read and consume a key without waiting. Returns false if buffer is empty */
+bool dss_scankey(dss_key_t *key);
+
+/** Inspect next buffered key without consuming it. Returns false if buffer is empty */
+bool dss_testkey(dss_key_t *key);
 
 /** Check if a key is available in keyboard buffer */
 bool dss_kbhit(void);

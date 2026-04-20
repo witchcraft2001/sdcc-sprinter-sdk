@@ -35,3 +35,5 @@ scripts/deploy_local.sh
 # Claude Code
 .claude/
 scripts/deploy_img_local.sh
+AGENTS.md
+CLAUDE.md
