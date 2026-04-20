@@ -85,7 +85,7 @@ make tools
 | 02 | files | 1.4 KB | DSS low-level file I/O (create/write/read/delete) |
 | 03 | graphics | 853 B | 320x256 graphics mode with palette and pixel drawing |
 | 04 | mouse | 1.3 KB | Mouse driver: init, cursor, position tracking |
-| 05 | keyinput | 1.4 KB | System info (BIOS version, date/time) + keyboard echo |
+| 05 | keyinput | 1.6 KB | System info (BIOS version, date/time) + keyboard echo with modifier state |
 | 06 | printf | 2.8 KB | `printf()` / `puts()` / `getchar()` demo |
 | 07 | fileio | 3.7 KB | Standard I/O: `fopen` / `fwrite` / `fread` / `fclose` / `remove` |
 | 08 | sort | 4.3 KB | Sorting algorithms: Bubble, Shell, Quick sort (ported from SOLID C) |
@@ -130,6 +130,24 @@ void main(void) {
 void main(void) {
     dss_puts("Hello, Sprinter!\r\n");
     dss_waitkey();
+}
+```
+
+### Reading full keyboard state
+
+`dss_waitkey()` is kept as a compact ANSI/Turbo C style helper when only the character code is needed. For DSS keyboard handling with modifiers and scan code, use `dss_key_t` with the extended APIs:
+
+```c
+#include <sprinter.h>
+
+void main(void) {
+    dss_key_t key;
+
+    dss_waitkey_ex(&key);
+
+    if ((key.modifiers & DSS_KEYMOD_CTRL) && (key.ascii == 'X' || key.ascii == 'x')) {
+        dss_puts("Ctrl+X\r\n");
+    }
 }
 ```
 
@@ -267,7 +285,10 @@ For direct hardware access, use the Sprinter-specific headers. These are indepen
 |----------|-------------|
 | `dss_puts(str)` | Print string |
 | `dss_putchar(ch)` | Print character |
-| `dss_waitkey()` | Wait for key |
+| `dss_waitkey()` | Wait for key, return ASCII only |
+| `dss_waitkey_ex(&key)` | Wait for key, return ASCII + scan + modifiers + locks |
+| `dss_scankey(&key)` | Non-blocking read with full keyboard state |
+| `dss_testkey(&key)` | Non-destructive buffer check with full keyboard state |
 | `dss_kbhit()` | Check keyboard |
 | `dss_clrscr()` | Clear screen |
 | `dss_gotoxy(x, y)` | Set cursor (1-based) |
@@ -428,7 +449,7 @@ sdcc-sprinter-sdk/
 ├── lib/
 │   ├── crt0.s              # C runtime startup
 │   └── src/
-│       ├── dss/            # DSS wrappers (45 modules)
+│       ├── dss/            # DSS wrappers
 │       ├── bios/           # BIOS wrappers (6 modules)
 │       ├── video/          # Video functions (7 modules)
 │       ├── mouse/          # Mouse functions (7 modules)
@@ -449,10 +470,8 @@ sdcc-sprinter-sdk/
 │   ├── 01_hello/ .. 15_exec/
 ├── build/
 │   ├── crt0.rel            # Compiled CRT0
-│   └── sprinter.lib        # Library archive (125 modules)
-└── scripts/
-    ├── copy_exe.sh          # Copy EXE files to target directory
-    └── make_floppy.sh       # Create FAT12 floppy image
+│   └── sprinter.lib        # Library archive
+└── scripts/                # Local helper scripts (not part of the repository)
 ```
 
 ## Architecture Notes
