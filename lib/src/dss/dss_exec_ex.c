@@ -2,6 +2,44 @@
 
 i16 dss_exec_ex(const char *path, u8 *err) __naked {
     (void)path; (void)err;
+#if defined(SDCC) && (SDCC < 300)
+    __asm
+        push    ix
+        ld      iy, #4
+        add     iy, sp
+        ld      l, 0 (iy)
+        ld      h, 1 (iy)
+        ld      e, 2 (iy)
+        ld      d, 3 (iy)
+        push    de
+        ld      b, #0
+        ld      c, #0x40
+        rst     #0x10
+        pop     de
+        pop     ix
+        jr      c, _dss_exec_ex_err_290
+        ld      b, a
+        ld      a, d
+        or      e
+        jr      z, _dss_exec_ex_ok_ret_290
+        xor     a
+        ld      (de), a
+_dss_exec_ex_ok_ret_290:
+        ld      l, b
+        ld      h, #0
+        ret
+_dss_exec_ex_err_290:
+        ld      b, a
+        ld      a, d
+        or      e
+        jr      z, _dss_exec_ex_set_ret_290
+        ld      a, b
+        ld      (de), a
+_dss_exec_ex_set_ret_290:
+        ld      hl, #0xFFFF
+        ret
+    __endasm;
+#else
     __asm
         ; sdcccall(1): path -> HL, err -> DE
         push    ix
@@ -36,4 +74,5 @@ _dss_exec_ex_set_ret:
         pop     ix
         ret
     __endasm;
+#endif
 }

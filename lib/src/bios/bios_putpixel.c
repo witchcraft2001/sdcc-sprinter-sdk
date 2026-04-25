@@ -8,6 +8,37 @@ void bios_putpixel(u16 x, u8 y, u8 color) __naked {
      * Screen A pixel address: WIN3_BASE(0xC000) + 0x20 + x
      */
     (void)x; (void)y; (void)color;
+#if defined(SDCC) && (SDCC < 300)
+    __asm
+        push    ix
+        ld      iy, #4
+        add     iy, sp
+        ld      l, 0 (iy)
+        ld      h, 1 (iy)
+        ld      d, 2 (iy)
+        ld      e, 3 (iy)
+
+        in      a, (#0xE2)
+        push    af
+
+        ld      a, #0x50
+        out     (#0xE2), a
+
+        ld      a, d
+        out     (#0x89), a
+
+        ld      bc, #0xC000
+        add     hl, bc
+
+        ld      (hl), e
+
+        pop     af
+        out     (#0xE2), a
+
+        pop     ix
+        ret
+    __endasm;
+#else
     __asm
         push    ix
 
@@ -48,4 +79,5 @@ void bios_putpixel(u16 x, u8 y, u8 color) __naked {
         inc     sp
         jp      (iy)
     __endasm;
+#endif
 }

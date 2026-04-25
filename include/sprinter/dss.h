@@ -181,111 +181,111 @@ typedef struct {
 /* --- System --- */
 
 /** Get DSS version. Returns (major << 8) | minor */
-u16 dss_version(void);
+u16 dss_version(void) SPRINTER_NAKED_DECL;
 
 /** Exit program with error code */
-void dss_exit(u8 code);
+void dss_exit(u8 code) SPRINTER_NAKED_DECL;
 
 /** Enable interrupts */
-void dss_ei(void);
+void dss_ei(void) SPRINTER_NAKED_DECL;
 
 /** Disable interrupts */
-void dss_di(void);
+void dss_di(void) SPRINTER_NAKED_DECL;
 
 /** Get current disk number (0=A:, 1=B:, 2=C:, ...) */
-u8 dss_getdisk(void);
+u8 dss_getdisk(void) SPRINTER_NAKED_DECL;
 
 /** Set current disk */
-void dss_setdisk(u8 disk);
+void dss_setdisk(u8 disk) SPRINTER_NAKED_DECL;
 
 /* --- Console I/O --- */
 
 /** Print a single character to console */
-void dss_putchar(u8 ch);
+void dss_putchar(u8 ch) SPRINTER_NAKED_DECL;
 
 /** Print a null-terminated string to console */
-void dss_puts(const char *str);
+void dss_puts(const char *str) SPRINTER_NAKED_DECL;
 
 /** Wait for a key press, return character code */
-u8 dss_waitkey(void);
+u8 dss_waitkey(void) SPRINTER_NAKED_DECL;
 
 /** Wait for a key press and return full keyboard state */
-void dss_waitkey_ex(dss_key_t *key);
+void dss_waitkey_ex(dss_key_t *key) SPRINTER_NAKED_DECL;
 
 /** Read and consume a key without waiting. Returns false if buffer is empty */
-bool dss_scankey(dss_key_t *key);
+bool dss_scankey(dss_key_t *key) SPRINTER_NAKED_DECL;
 
 /** Inspect next buffered key without consuming it. Returns false if buffer is empty */
-bool dss_testkey(dss_key_t *key);
+bool dss_testkey(dss_key_t *key) SPRINTER_NAKED_DECL;
 
 /** Check if a key is available in keyboard buffer */
-bool dss_kbhit(void);
+bool dss_kbhit(void) SPRINTER_NAKED_DECL;
 
 /** Get key with echo */
-u16 dss_getche(void);
+u16 dss_getche(void) SPRINTER_NAKED_DECL;
 
 /** Set cursor position (1-based) */
-void dss_gotoxy(u8 x, u8 y);
+void dss_gotoxy(u8 x, u8 y) SPRINTER_NAKED_DECL;
 
 /** Clear screen */
-void dss_clrscr(void);
+void dss_clrscr(void) SPRINTER_NAKED_DECL;
 
 /* --- File I/O --- */
 
 /** Open file, returns file descriptor or -1 on error */
-i16 dss_open(const char *path, u8 mode);
+i16 dss_open(const char *path, u8 mode) SPRINTER_NAKED_DECL;
 
 /** Create new file, returns file descriptor or -1 on error */
-i16 dss_creat(const char *path);
+i16 dss_creat(const char *path) SPRINTER_NAKED_DECL;
 
 /** Close file descriptor */
-u8 dss_close(u8 fd);
+u8 dss_close(u8 fd) SPRINTER_NAKED_DECL;
 
 /** Read from file. Returns bytes actually read, or -1 on error */
-i16 dss_read(u8 fd, void *buf, u16 count);
+i16 dss_read(u8 fd, void *buf, u16 count) SPRINTER_NAKED_DECL;
 
 /** Write to file. Returns bytes actually written, or -1 on error */
-i16 dss_write(u8 fd, const void *buf, u16 count);
+i16 dss_write(u8 fd, const void *buf, u16 count) SPRINTER_NAKED_DECL;
 
 /** Seek in file. Returns 0 on success, -1 on error */
-i16 dss_seek(u8 fd, u32 offset, u8 origin);
+i16 dss_seek(u8 fd, u32 offset, u8 origin) SPRINTER_NAKED_DECL;
 
 /** Delete file. Returns 0 on success, error code otherwise */
-u8 dss_delete(const char *path);
+u8 dss_delete(const char *path) SPRINTER_NAKED_DECL;
 
 /** Rename file. Returns 0 on success */
-u8 dss_rename(const char *oldpath, const char *newpath);
+u8 dss_rename(const char *oldpath, const char *newpath) SPRINTER_NAKED_DECL;
 
 /* --- Directories --- */
 
 /** Change directory. Returns 0 on success */
-u8 dss_chdir(const char *path);
+u8 dss_chdir(const char *path) SPRINTER_NAKED_DECL;
 
 /** Get current directory path into buf. Returns 0 on success */
-u8 dss_curdir(char *buf);
+u8 dss_curdir(char *buf) SPRINTER_NAKED_DECL;
 
 /** Create directory. Returns 0 on success */
-u8 dss_mkdir(const char *path);
+u8 dss_mkdir(const char *path) SPRINTER_NAKED_DECL;
 
 /** Remove directory. Returns 0 on success */
-u8 dss_rmdir(const char *path);
+u8 dss_rmdir(const char *path) SPRINTER_NAKED_DECL;
 
 /** Find first matching file */
-i8 dss_ffirst(const char *pattern, dss_find_t *result, u8 attr);
+i8 dss_ffirst(const char *pattern, dss_find_t *result, u8 attr) SPRINTER_NAKED_DECL;
 
 /** Find next matching file */
-i8 dss_fnext(dss_find_t *result);
+i8 dss_fnext(dss_find_t *result) SPRINTER_NAKED_DECL;
 
 /* --- Date/Time --- */
 
 /** Get system date */
-void dss_getdate(dss_date_t *d);
+void dss_getdate(dss_date_t *d) SPRINTER_NAKED_DECL;
 
 /** Get system time */
-void dss_gettime(dss_time_t *t);
+void dss_gettime(dss_time_t *t) SPRINTER_NAKED_DECL;
 
 /** Set system date and time (both required in single call) */
-void dss_settime(dss_date_t *d, dss_time_t *t);
+void dss_settime(dss_date_t *d, dss_time_t *t) SPRINTER_NAKED_DECL;
 
 /* --- Memory --- */
 
@@ -293,16 +293,16 @@ void dss_settime(dss_date_t *d, dss_time_t *t);
  *  win: 0-3 (memory window number)
  *  page: RAM page number
  */
-void dss_setwin(u8 win, u8 page);
+void dss_setwin(u8 win, u8 page) SPRINTER_NAKED_DECL;
 
 /** Allocate a memory page. Returns page number or 0xFF on error */
-u8 dss_getmem(void);
+u8 dss_getmem(void) SPRINTER_NAKED_DECL;
 
 /** Free a memory page */
-void dss_freemem(u8 page);
+void dss_freemem(u8 page) SPRINTER_NAKED_DECL;
 
 /** Get memory info: total and free page counts */
-void dss_meminfo(u16 *total, u16 *free_pages);
+void dss_meminfo(u16 *total, u16 *free_pages) SPRINTER_NAKED_DECL;
 
 /* --- Video --- */
 
@@ -310,30 +310,30 @@ void dss_meminfo(u16 *total, u16 *free_pages);
  *  mode: see VMODE_* constants in video.h
  *  page: 0 or 1
  */
-u8 dss_setvmod(u8 mode, u8 page);
+u8 dss_setvmod(u8 mode, u8 page) SPRINTER_NAKED_DECL;
 
 /** Get current video mode and page */
-void dss_getvmod(u8 *mode, u8 *page);
+void dss_getvmod(u8 *mode, u8 *page) SPRINTER_NAKED_DECL;
 
 /** Scroll screen area.
  *  dir: SCROLL_UP (1) or SCROLL_DOWN (2)
  *  count: number of lines to scroll (0 = clear line)
  */
-void dss_scroll(u8 x, u8 y, u8 w, u8 h, u8 dir, u8 count);
+void dss_scroll(u8 x, u8 y, u8 w, u8 h, u8 dir, u8 count) SPRINTER_NAKED_DECL;
 
 /** Clear screen area with color and attribute */
-void dss_clear(u8 x, u8 y, u8 w, u8 h, u8 color, u8 attr);
+void dss_clear(u8 x, u8 y, u8 w, u8 h, u8 color, u8 attr) SPRINTER_NAKED_DECL;
 
 /* --- Process --- */
 
 /** Execute a program. Returns exit code or -1 on error */
-i16 dss_exec(const char *path);
+i16 dss_exec(const char *path) SPRINTER_NAKED_DECL;
 
 /** Execute a program with raw DSS error capture.
  *  On error returns -1 and stores DSS error code from A into *err (if err != 0).
  *  On success returns child exit code and stores 0 into *err (if err != 0).
  */
-i16 dss_exec_ex(const char *path, u8 *err);
+i16 dss_exec_ex(const char *path, u8 *err) SPRINTER_NAKED_DECL;
 
 /** Get pointer to saved command line */
 char *dss_cmdline(void);
@@ -341,34 +341,34 @@ char *dss_cmdline(void);
 /** Call code at given address. Saves/restores IX (SDCC frame pointer).
  *  Returns value left in HL by called code.
  */
-u16 dss_call(u16 addr);
+u16 dss_call(u16 addr) SPRINTER_NAKED_DECL;
 
 /** Call code at given address with parameter pushed on stack.
  *  Called code can read param via: pop hl (ret addr), pop de (param), push hl.
  *  Returns value left in HL by called code.
  */
-u16 dss_callp(u16 addr, u16 param);
+u16 dss_callp(u16 addr, u16 param) SPRINTER_NAKED_DECL;
 
 /** Parse path into components.
  *  subfunc: EXPATH_DRIVE, EXPATH_PATH, EXPATH_NAME, EXPATH_EXT, or EXPATH_ALL
  *  Returns 0 on success, -1 on error.
  */
-i8 dss_expath(const char *path, char *buf, u8 subfunc);
+i8 dss_expath(const char *path, char *buf, u8 subfunc) SPRINTER_NAKED_DECL;
 
 /** Get application info.
  *  subfunc: APPINFO_PARAMS (0), APPINFO_DIR (1), or APPINFO_FULL (2)
  *  Returns 0 on success, -1 on error.
  */
-i8 dss_appinfo(u8 subfunc, char *buf);
+i8 dss_appinfo(u8 subfunc, char *buf) SPRINTER_NAKED_DECL;
 
 /* --- Environment --- */
 
 /** Get environment variable value. Returns 0 on success, -1 if not found */
-i8 dss_getenv(const char *name, char *buf);
+i8 dss_getenv(const char *name, char *buf) SPRINTER_NAKED_DECL;
 
 /** Set environment variable. name_value format: "NAME=VALUE"
  *  Returns 0 on success, -1 on error.
  */
-i8 dss_setenv(const char *namevalue);
+i8 dss_setenv(const char *namevalue) SPRINTER_NAKED_DECL;
 
 #endif /* _SPRINTER_DSS_H */

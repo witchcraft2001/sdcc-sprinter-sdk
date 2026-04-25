@@ -8,7 +8,7 @@ DSS EXE header format (512 bytes, from emulator SprintEXE struct):
 
   Offset  Size  Field
   0x00    3     id          "EXE" signature
-  0x03    1     version     format version (0x01)
+  0x03    1     version     DSS EXE version byte (0x00)
   0x04    4     offset      code offset in file (uint32 LE, usually 0x200 = 512)
   0x08    2     loader      loader size (0 = no loader)
   0x0A    2     loader2     reserved (0)
@@ -27,7 +27,7 @@ import argparse
 
 
 EXE_SIGNATURE = b'EXE'
-EXE_VERSION = 0x01
+EXE_VERSION = 0x00
 EXE_HEADER_SIZE = 512
 
 
