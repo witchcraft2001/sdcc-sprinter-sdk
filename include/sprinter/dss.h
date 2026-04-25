@@ -335,6 +335,9 @@ i16 dss_exec(const char *path) SPRINTER_NAKED_DECL;
  */
 i16 dss_exec_ex(const char *path, u8 *err) SPRINTER_NAKED_DECL;
 
+/** Get exit code of the last EXEC'ed child from DSS ERLEVEL */
+u8 dss_wait(void) SPRINTER_NAKED_DECL;
+
 /** Get pointer to saved command line */
 char *dss_cmdline(void);
 

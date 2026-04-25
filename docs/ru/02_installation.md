@@ -6,14 +6,14 @@
 
 | Инструмент | Версия | Назначение |
 |------------|--------|------------|
-| **SDCC** | 4.x | Компилятор Си для Z80 |
+| **SDCC** | 2.9.0 | Компилятор Си, ассемблер, линкер и архиватор для Z80 |
 | **Python** | 3.x | Конвертер ihx2exe.py (Intel HEX в Sprinter EXE) |
 | **GNU Make** | любая | Система сборки |
 
 ## Установка на macOS
 
 ```bash
-brew install sdcc python3
+brew install python3
 ```
 
 GNU Make уже входит в состав Xcode Command Line Tools. Если не установлен:
@@ -27,19 +27,19 @@ xcode-select --install
 ### Ubuntu / Debian
 
 ```bash
-sudo apt install sdcc python3 make
+sudo apt install python3 make
 ```
 
 ### Fedora / RHEL
 
 ```bash
-sudo dnf install sdcc python3 make
+sudo dnf install python3 make
 ```
 
 ### Arch Linux
 
 ```bash
-sudo pacman -S sdcc python make
+sudo pacman -S python make
 ```
 
 ## Установка на Windows
@@ -50,13 +50,15 @@ sudo pacman -S sdcc python make
 2. Откройте терминал **MSYS2 MinGW64** и выполните:
 
 ```bash
-pacman -S mingw-w64-x86_64-sdcc mingw-w64-x86_64-python3 make
+pacman -S mingw-w64-x86_64-python3 make
 ```
 
 ### Вариант 2: ручная установка
 
 1. Скачайте и установите [Python 3.x](https://www.python.org/downloads/) -- при установке отметьте "Add to PATH"
-2. Скачайте и установите [SDCC](https://sdcc.sourceforge.net/) -- Windows installer, добавьте в PATH
+2. Установите toolchain SDCC 2.9.0 и убедитесь, что доступен `sdcc290`.
+   SDK также использует `sdcpp-2.9.0`; если `sdcc290` оформлен как wrapper рядом с деревом `opt/sdcc-2.9.0/bin`, этот препроцессор будет найден автоматически.
+   `sdasz80`, `sdldz80` и `sdar` берутся из `PATH`, если только в указанном каталоге нет совместимых wrapper-имён.
 3. Скачайте [GNU Make](https://gnuwin32.sourceforge.net/packages/make.htm) или используйте Make из Git Bash
 
 ## Проверка установки
@@ -64,8 +66,8 @@ pacman -S mingw-w64-x86_64-sdcc mingw-w64-x86_64-python3 make
 После установки убедитесь, что все инструменты доступны:
 
 ```bash
-sdcc --version
-# SDCC 4.x.x ...
+sdcc290 --version
+# SDCC 2.9.0 ...
 
 python3 --version
 # Python 3.x.x
@@ -98,6 +100,21 @@ make
 ```
 build/crt0.rel       -- стартовый код
 build/sprinter.lib   -- библиотека SDK (103 модуля)
+```
+
+Если в системе установлено несколько версий SDCC, зафиксируйте именно нужный каталог с toolchain 2.9.0:
+
+```bash
+make SDCC290_BIN_DIR=/absolute/path/to/sdcc290/bin
+make examples SDCC290_BIN_DIR=/absolute/path/to/sdcc290/bin
+```
+
+Либо создайте `config.local.mk` на основе `config.local.mk.example`:
+
+```makefile
+SDCC290_BIN_DIR := /absolute/path/to/sdcc290/bin
+
+Рекомендуемое значение: либо каталог, в котором лежит wrapper `sdcc290`, либо исходный каталог `bin` от SDCC 2.9.0, где находятся `sdcc-2.9.0` и `sdcpp-2.9.0`.
 ```
 
 ## Сборка примеров

@@ -27,7 +27,7 @@ import argparse
 
 
 EXE_SIGNATURE = b'EXE'
-EXE_VERSION = 0x00
+EXE_VERSION = 0x01
 EXE_HEADER_SIZE = 512
 
 

@@ -1,0 +1,14 @@
+# Copy this file to config.local.mk and adjust the path for your machine.
+#
+# The SDK targets SDCC 2.9.0.
+# Point this either to:
+#   - a directory that contains the sdcc290 wrapper script, or
+#   - the original SDCC 2.9.0 bin directory with sdcc-2.9.0/sdcpp-2.9.0.
+#
+# Assembler/linker tools are taken from PATH unless the same directory also
+# provides wrapper names compatible with sdasz80/sdldz80/sdar.
+
+SDCC290_BIN_DIR := /absolute/path/to/sdcc290/bin
+
+# Optional: switch the compiler optimization profile.
+# SDCC_OPT := --opt-code-size

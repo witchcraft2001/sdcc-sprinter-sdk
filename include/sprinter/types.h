@@ -31,10 +31,6 @@ typedef signed long         i32;
 typedef unsigned char       byte;
 typedef unsigned int        word;
 
-#if defined(SDCC) && (SDCC < 300)
-#define SPRINTER_NAKED_DECL __naked
-#else
 #define SPRINTER_NAKED_DECL
-#endif
 
 #endif /* _SPRINTER_TYPES_H */

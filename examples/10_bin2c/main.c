@@ -2,6 +2,8 @@
 #include <string.h>
 #include <sprinter/dss.h>
 
+#define ARG_MAX_LEN 64
+
 /* Skip leading spaces, return pointer to next token.
    Writes '\0' at token end, advances *pp past it. */
 static char *next_arg(char **pp) {
@@ -16,9 +18,27 @@ static char *next_arg(char **pp) {
     return start;
 }
 
+static void copy_arg(char *dst, const char *src, u16 dst_size) {
+    u16 i = 0;
+
+    if (!dst_size) return;
+    if (!src) {
+        dst[0] = '\0';
+        return;
+    }
+
+    while (src[i] && (i + 1) < dst_size) {
+        dst[i] = src[i];
+        i++;
+    }
+    dst[i] = '\0';
+}
+
 void main(void) {
     char *cmdline = dss_cmdline();
     char *infile, *outfile;
+    char infile_buf[ARG_MAX_LEN];
+    char outfile_buf[ARG_MAX_LEN];
     FILE *fin, *fout;
     int c, count = 0;
 
@@ -31,6 +51,13 @@ void main(void) {
         printf("Usage: bin2c <infile> [outfile]\n");
         printf("  If outfile omitted, output to screen.\n");
         return;
+    }
+
+    copy_arg(infile_buf, infile, sizeof(infile_buf));
+    infile = infile_buf;
+    if (outfile) {
+        copy_arg(outfile_buf, outfile, sizeof(outfile_buf));
+        outfile = outfile_buf;
     }
 
     fin = fopen(infile, "r");

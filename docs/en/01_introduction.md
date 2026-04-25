@@ -24,12 +24,12 @@ DSS provides system calls for file I/O, console output, keyboard input, memory m
 
 ## SDCC Compiler
 
-**SDCC** (Small Device C Compiler) is a free, open-source, retargetable C compiler for 8-bit processors including the Z80. It runs on macOS, Linux, and Windows.
+**SDCC 2.9.0** is the fixed target compiler for this SDK. The project is tuned specifically for its Z80 code generator, assembler, linker, and ABI.
 
 Key features relevant to Sprinter development:
 
 - **C89/C99 support** (partial C11/C23)
-- **Z80 code generation** with register-based calling convention (`sdcccall(1)`)
+- **Z80 code generation** with the SDCC 2.9.0 stack-based ABI used throughout this SDK
 - **Optimizing compiler** with configurable optimization levels
 - **Standard linker** (`sdldz80`) with library archive support (`sdar`)
 - **Intel HEX output** (converted to Sprinter EXE by `ihx2exe.py`)
@@ -44,12 +44,12 @@ SOLID C was the original C compiler for ZX Sprinter, bundled with a DSS/BIOS lib
 |---------|---------|-------------------|
 | Compiler | Proprietary, Sprinter-only | Free, cross-platform (macOS/Linux/Windows) |
 | Language | K&R C + some ANSI | ANSI C89/C99 |
-| Calling convention | Register-based (custom) | Register-based (`sdcccall(1)`) |
+| Calling convention | Register-based (custom) | SDCC 2.9.0 stack-based ABI |
 | Standard library | Partial (`stdio.h`, `string.h`, etc.) | Comparable (`stdio.h`, `stdlib.h`, `string.h`, `ctype.h`, `conio.h`) |
 | Recursion | Requires `#pragma nonrec` or `recursive` keyword | Automatic (SDCC handles stack frames) |
 | Variadic functions | `.` notation | Standard `<stdarg.h>` with `...` |
 | Dynamic memory | `malloc` / `free` available | Not yet implemented |
-| Optimization | Basic | Configurable (`--max-allocs-per-node`, `--opt-code-speed`) |
+| Optimization | Basic | Configurable (`--opt-code-speed` / `--opt-code-size`) |
 | Linking | All-or-nothing | Selective (only used functions are linked) |
 | Development | Discontinued (2004) | Active |
 

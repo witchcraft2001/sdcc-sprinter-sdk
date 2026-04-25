@@ -5,7 +5,7 @@ Cross-platform C development toolkit for the **ZX Sprinter** computer (Z80 CPU, 
 ## Features
 
 - **Standard C library** — `stdio.h`, `stdlib.h`, `string.h`, `ctype.h`, `conio.h` for easy porting of existing programs
-- **SDCC 4.x compiler** for Z80 — free, open-source, cross-platform (macOS/Linux/Windows)
+- **SDCC 2.9.0 toolchain** for Z80 — fixed target compiler for this SDK
 - **sjasmplus 1.22** assembler — for mixed C+ASM projects
 - **Sprinter hardware API** — DSS OS calls, BIOS, video modes, mouse driver, port I/O
 - **Compatibility headers** — `io.h`, `dos.h`, `dir.h` for easy porting from Turbo C / SOLID C
@@ -22,12 +22,12 @@ Cross-platform C development toolkit for the **ZX Sprinter** computer (Z80 CPU, 
 
 **macOS:**
 ```bash
-brew install sdcc python3
+brew install python3
 ```
 
 **Ubuntu / Debian:**
 ```bash
-sudo apt install sdcc python3 make
+sudo apt install python3 make
 ```
 
 **Windows (MSYS2):**
@@ -39,14 +39,29 @@ pacman -S mingw-w64-x86_64-sdcc mingw-w64-x86_64-python3 make
 
 **Windows (manual):**
 1. Install [Python 3.x](https://www.python.org/downloads/) (add to PATH)
-2. Install [SDCC](https://sdcc.sourceforge.net/) (Windows installer, add to PATH)
+2. Install SDCC 2.9.0 and make `sdcc290` available. The build also needs `sdcpp-2.9.0`:
+   if `sdcc290` is a wrapper script placed next to an `opt/sdcc-2.9.0/bin` tree, the SDK will find `sdcpp-2.9.0` automatically.
+   `sdasz80`, `sdldz80`, and `sdar` are taken from `PATH` unless matching wrappers also exist in the configured directory.
 3. Install [GNU Make](https://gnuwin32.sourceforge.net/packages/make.htm) or use MSYS2/Git Bash
 
 **Verify installation:**
 ```bash
-sdcc --version    # Should show 4.x
+sdcc290 --version # Should show SDCC 2.9.0
 python3 --version # Should show 3.x
 make --version    # GNU Make
+```
+
+If several SDCC versions are installed, the SDK can be pinned to a specific 2.9.0 toolchain directory:
+
+```bash
+make SDCC290_BIN_DIR=/absolute/path/to/sdcc290/bin
+make examples SDCC290_BIN_DIR=/absolute/path/to/sdcc290/bin
+```
+
+Or create `config.local.mk` from `config.local.mk.example`:
+
+```makefile
+SDCC290_BIN_DIR := /absolute/path/to/sdcc290/bin
 ```
 
 ### 2. Build the SDK
@@ -163,6 +178,12 @@ include $(SDK_DIR)examples/common.mk
 ```
 
 Then run `make` to build `myapp.exe`.
+
+If the machine has multiple SDCC versions installed, pin the desired 2.9.0 toolchain with `config.local.mk` or pass `SDCC290_BIN_DIR=...` on the `make` command line.
+The recommended value is either:
+`/path/to/dir/with/sdcc290`
+or:
+`/path/to/opt/sdcc-2.9.0/bin`
 
 For multiple source files:
 ```makefile

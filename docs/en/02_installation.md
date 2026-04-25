@@ -6,7 +6,7 @@ You need three tools to build the SDK and compile programs:
 
 | Tool | Version | Purpose |
 |------|---------|---------|
-| **SDCC** | 4.x | C compiler, assembler, linker, library archiver |
+| **SDCC** | 2.9.0 | C compiler, assembler, linker, library archiver |
 | **Python** | 3.x | `ihx2exe.py` converter (Intel HEX to Sprinter EXE) |
 | **GNU Make** | 3.8+ | Build system |
 
@@ -15,7 +15,7 @@ You need three tools to build the SDK and compile programs:
 Install via Homebrew:
 
 ```bash
-brew install sdcc python3
+brew install python3
 ```
 
 GNU Make is included with Xcode Command Line Tools:
@@ -29,19 +29,19 @@ xcode-select --install
 **Ubuntu / Debian:**
 
 ```bash
-sudo apt install sdcc python3 make
+sudo apt install python3 make
 ```
 
 **Fedora / RHEL:**
 
 ```bash
-sudo dnf install sdcc python3 make
+sudo dnf install python3 make
 ```
 
 **Arch Linux:**
 
 ```bash
-sudo pacman -S sdcc python3 make
+sudo pacman -S python3 make
 ```
 
 ## Windows
@@ -53,7 +53,7 @@ sudo pacman -S sdcc python3 make
 3. Install packages:
 
 ```bash
-pacman -S mingw-w64-x86_64-sdcc mingw-w64-x86_64-python3 make
+pacman -S mingw-w64-x86_64-python3 make
 ```
 
 4. Use the MSYS2 MinGW64 terminal for all SDK commands.
@@ -61,7 +61,9 @@ pacman -S mingw-w64-x86_64-sdcc mingw-w64-x86_64-python3 make
 ### Method 2: Manual Installation
 
 1. Download and install [Python 3.x](https://www.python.org/downloads/). During installation, check **"Add Python to PATH"**.
-2. Download and install [SDCC](https://sdcc.sourceforge.net/) using the Windows installer. Make sure it is added to PATH.
+2. Install the SDCC 2.9.0 toolchain and make `sdcc290` available.
+   The SDK also needs `sdcpp-2.9.0`; when `sdcc290` is a wrapper placed next to an `opt/sdcc-2.9.0/bin` tree, it is detected automatically.
+   `sdasz80`, `sdldz80`, and `sdar` are taken from `PATH` unless compatible wrappers also exist in the configured directory.
 3. Install [GNU Make](https://gnuwin32.sourceforge.net/packages/make.htm), or use Make from Git Bash / MSYS2.
 
 ## Verifying Installation
@@ -69,10 +71,10 @@ pacman -S mingw-w64-x86_64-sdcc mingw-w64-x86_64-python3 make
 Run these commands to confirm everything is installed:
 
 ```bash
-sdcc --version
+sdcc290 --version
 ```
 
-Expected output: `SDCC : mcs51/z80/... 4.x.x ...`
+Expected output: `SDCC : mcs51/z80/... 2.9.0 ...`
 
 ```bash
 python3 --version
@@ -101,6 +103,21 @@ This compiles all library modules and creates:
 
 - `build/crt0.rel` -- C runtime startup object
 - `build/sprinter.lib` -- library archive (~103 modules, selective linking)
+
+If several SDCC versions are installed on the same machine, pin this SDK to the exact 2.9.0 toolchain directory:
+
+```bash
+make SDCC290_BIN_DIR=/absolute/path/to/sdcc290/bin
+make examples SDCC290_BIN_DIR=/absolute/path/to/sdcc290/bin
+```
+
+You can also create `config.local.mk` from `config.local.mk.example` and store the path there:
+
+```makefile
+SDCC290_BIN_DIR := /absolute/path/to/sdcc290/bin
+
+The recommended value is either a directory that contains the `sdcc290` wrapper, or the original SDCC 2.9.0 `bin` directory that contains `sdcc-2.9.0` and `sdcpp-2.9.0`.
+```
 
 ## Building the Examples
 
