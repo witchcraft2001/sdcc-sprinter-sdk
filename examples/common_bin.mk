@@ -41,14 +41,14 @@ $(BUILD)/%.rel: %.c | $(BUILD)
 	cp $@ $(basename $@).o
 
 $(BUILD)/$(APP).ihx: $(APP_RELS)
-	printf '%s\n' '-mjwx' > $(BUILD)/$(APP).lk
+	printf '%s\n' '-mjx' > $(BUILD)/$(APP).lk
 	printf '%s\n' '-i $@' >> $(BUILD)/$(APP).lk
 	printf '%s\n' '-b _CODE = $(CODE_LOC)' >> $(BUILD)/$(APP).lk
 	if [ -n "$(DATA_LOC)" ]; then printf '%s\n' '-b _DATA = $(DATA_LOC)' >> $(BUILD)/$(APP).lk; fi
 	printf '%s\n' '-l $(abspath $(SPRLIB))' >> $(BUILD)/$(APP).lk
 	for rel in $(APP_LINK); do printf '%s\n' "$$rel" >> $(BUILD)/$(APP).lk; done
 	printf '%s\n' '-e' >> $(BUILD)/$(APP).lk
-	$(SDLDZ80) -nf $(BUILD)/$(APP).lk
+	$(SDLDZ80) -n -f $(BUILD)/$(APP).lk
 
 $(APP).bin: $(BUILD)/$(APP).ihx
 	$(PYTHON) $(SDK_DIR)tools/ihx2bin.py $< $@ --org $(CODE_LOC)

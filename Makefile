@@ -59,13 +59,13 @@ all: lib
 help:
 	@echo "ZX Sprinter SDCC SDK"
 	@echo ""
-	@echo "  make                  Build library with sdcc290"
+	@echo "  make                  Build library with SDCC 2.9.0"
 	@echo "  make examples         Build all examples"
 	@echo "  make clean            Clean"
 	@echo "  make tools            Build sjasmplus"
 	@echo "  make SDCC_OPT=...     Override optimization profile"
-	@echo "  make SDCC290_BIN_DIR=/path/to/bin"
-	@echo "                        Use a specific sdcc290 toolchain directory"
+	@echo "  make SDCC290_BIN_DIR=/path/to/sdcc-2.9.0/bin"
+	@echo "                        Use a specific SDCC 2.9.0 toolchain directory"
 
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
@@ -90,7 +90,7 @@ $(BUILD_DIR)/%.rel: %.c | $(BUILD_DIR)
 SPRINTER_LIB_INPUTS = $(LIB_C_OBJS) $(LIB_ASM_OBJS)
 
 $(SPRINTER_LIB): $(LIB_C_RELS) $(LIB_ASM_RELS)
-	$(SDAR) rc $@ $(SPRINTER_LIB_INPUTS)
+	$(SDAR) r $@ $(SPRINTER_LIB_INPUTS)
 
 # --- Build library ---
 lib: $(CRT0_REL) $(SPRINTER_LIB)

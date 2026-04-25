@@ -56,9 +56,9 @@ pacman -S mingw-w64-x86_64-python3 make
 ### Вариант 2: ручная установка
 
 1. Скачайте и установите [Python 3.x](https://www.python.org/downloads/) -- при установке отметьте "Add to PATH"
-2. Установите toolchain SDCC 2.9.0 и убедитесь, что доступен `sdcc290`.
-   SDK также использует `sdcpp-2.9.0`; если `sdcc290` оформлен как wrapper рядом с деревом `opt/sdcc-2.9.0/bin`, этот препроцессор будет найден автоматически.
-   `sdasz80`, `sdldz80` и `sdar` берутся из `PATH`, если только в указанном каталоге нет совместимых wrapper-имён.
+2. Установите toolchain SDCC 2.9.0.
+   Рекомендуемый вариант: указать SDK исходный каталог `bin` от SDCC 2.9.0.
+   В нём должны лежать `sdcc` или `sdcc-2.9.0`, `sdcpp-2.9.0`, а также либо оригинальные инструменты `as-z80-2.9.0`, `sdcclib-2.9.0`, `link-z80-2.9.0`, либо их переименованные аналоги `sdasz80`, `sdar`, `sdldz80`.
 3. Скачайте [GNU Make](https://gnuwin32.sourceforge.net/packages/make.htm) или используйте Make из Git Bash
 
 ## Проверка установки
@@ -66,7 +66,7 @@ pacman -S mingw-w64-x86_64-python3 make
 После установки убедитесь, что все инструменты доступны:
 
 ```bash
-sdcc290 --version
+/absolute/path/to/sdcc-2.9.0/bin/sdcc --version
 # SDCC 2.9.0 ...
 
 python3 --version
@@ -75,6 +75,8 @@ python3 --version
 make --version
 # GNU Make ...
 ```
+
+Если бинарник компилятора называется `sdcc-2.9.0`, используйте полный путь к нему.
 
 На Windows вместо `python3` может использоваться `python`:
 
@@ -105,16 +107,24 @@ build/sprinter.lib   -- библиотека SDK (103 модуля)
 Если в системе установлено несколько версий SDCC, зафиксируйте именно нужный каталог с toolchain 2.9.0:
 
 ```bash
-make SDCC290_BIN_DIR=/absolute/path/to/sdcc290/bin
-make examples SDCC290_BIN_DIR=/absolute/path/to/sdcc290/bin
+make SDCC290_BIN_DIR=/absolute/path/to/sdcc-2.9.0/bin
+make examples SDCC290_BIN_DIR=/absolute/path/to/sdcc-2.9.0/bin
 ```
 
 Либо создайте `config.local.mk` на основе `config.local.mk.example`:
 
 ```makefile
-SDCC290_BIN_DIR := /absolute/path/to/sdcc290/bin
+SDCC290_BIN_DIR := /absolute/path/to/sdcc-2.9.0/bin
+```
 
-Рекомендуемое значение: либо каталог, в котором лежит wrapper `sdcc290`, либо исходный каталог `bin` от SDCC 2.9.0, где находятся `sdcc-2.9.0` и `sdcpp-2.9.0`.
+Если переменную `SDCC290_BIN_DIR` использовать не хочется, можно зафиксировать пути ко всем инструментам явно:
+
+```makefile
+SDCC    := /absolute/path/to/sdcc-2.9.0/bin/sdcc
+SDCPP   := /absolute/path/to/sdcc-2.9.0/bin/sdcpp-2.9.0
+SDASZ80 := /absolute/path/to/sdcc-2.9.0/bin/as-z80-2.9.0
+SDAR    := /absolute/path/to/sdcc-2.9.0/bin/sdcclib-2.9.0
+SDLDZ80 := /absolute/path/to/sdcc-2.9.0/bin/link-z80-2.9.0
 ```
 
 ## Сборка примеров
@@ -123,7 +133,7 @@ SDCC290_BIN_DIR := /absolute/path/to/sdcc290/bin
 make examples
 ```
 
-Эта команда собирает все 13 примеров из директории `examples/`. Для каждого примера создаётся исполняемый файл `.exe` в формате Sprinter DSS.
+Эта команда собирает все 19 примеров из директории `examples/`. Для каждого примера создаётся исполняемый файл `.exe` в формате Sprinter DSS.
 
 ## Сборка sjasmplus (опционально)
 
@@ -158,7 +168,7 @@ sdcc-sprinter-sdk/
 │   ├── crt0.s             # Стартовый код
 │   └── src/               # Исходники библиотеки
 ├── build/                 # Скомпилированные файлы
-├── examples/              # 13 примеров
+├── examples/              # 19 примеров
 ├── tools/                 # Утилиты (ihx2exe.py)
 └── scripts/               # Вспомогательные скрипты
 ```

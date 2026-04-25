@@ -5,30 +5,22 @@
 #   config.local.mk
 #
 # Supported knobs:
-#   SDCC290_BIN_DIR = /absolute/path/to/bin
+#   SDCC290_BIN_DIR = /absolute/path/to/sdcc-2.9.0/bin
+#   SDCC            = /absolute/path/to/sdcc-2.9.0/bin/sdcc
+#   SDCPP           = /absolute/path/to/sdcc-2.9.0/bin/sdcpp-2.9.0
+#   SDASZ80         = /absolute/path/to/sdcc-2.9.0/bin/as-z80-2.9.0
+#   SDAR            = /absolute/path/to/sdcc-2.9.0/bin/sdcclib-2.9.0
+#   SDLDZ80         = /absolute/path/to/sdcc-2.9.0/bin/link-z80-2.9.0
 #   SDCC_OPT        = --opt-code-speed | --opt-code-size
 #
 
 -include $(SDK_DIR)config.local.mk
 
 SDCC290_BIN_DIR ?=
-SDCC290_WRAPPER ?= $(shell command -v sdcc290 2>/dev/null)
 
 ifeq ($(strip $(SDCC290_BIN_DIR)),)
-ifneq ($(strip $(SDCC290_WRAPPER)),)
-SDCC ?= $(SDCC290_WRAPPER)
-else
-SDCC ?= sdcc290
-endif
-
-SDCC290_DEFAULT_ROOT := $(patsubst %/,%,$(dir $(abspath $(SDCC290_WRAPPER))))
-
-ifeq ($(wildcard $(SDCC290_DEFAULT_ROOT)/opt/sdcc-2.9.0/bin/sdcpp-2.9.0),$(SDCC290_DEFAULT_ROOT)/opt/sdcc-2.9.0/bin/sdcpp-2.9.0)
-SDCPP ?= $(SDCC290_DEFAULT_ROOT)/opt/sdcc-2.9.0/bin/sdcpp-2.9.0
-else
-SDCPP ?= sdcpp-2.9.0
-endif
-
+SDCC ?= sdcc
+SDCPP ?= sdcpp
 SDASZ80 ?= sdasz80
 SDAR    ?= sdar
 SDLDZ80 ?= sdldz80
@@ -37,32 +29,38 @@ SDCC290_BIN_DIR := $(patsubst %/,%,$(abspath $(SDCC290_BIN_DIR)))
 
 ifeq ($(wildcard $(SDCC290_BIN_DIR)/sdcc-2.9.0),$(SDCC290_BIN_DIR)/sdcc-2.9.0)
 SDCC ?= $(SDCC290_BIN_DIR)/sdcc-2.9.0
-else ifeq ($(wildcard $(SDCC290_BIN_DIR)/sdcc290),$(SDCC290_BIN_DIR)/sdcc290)
-SDCC ?= $(SDCC290_BIN_DIR)/sdcc290
 else
 SDCC ?= $(SDCC290_BIN_DIR)/sdcc
 endif
 
 ifeq ($(wildcard $(SDCC290_BIN_DIR)/sdcpp-2.9.0),$(SDCC290_BIN_DIR)/sdcpp-2.9.0)
 SDCPP ?= $(SDCC290_BIN_DIR)/sdcpp-2.9.0
+else ifeq ($(wildcard $(SDCC290_BIN_DIR)/sdcpp),$(SDCC290_BIN_DIR)/sdcpp)
+SDCPP ?= $(SDCC290_BIN_DIR)/sdcpp
 else
-SDCPP ?= sdcpp-2.9.0
+SDCPP ?= sdcpp
 endif
 
 ifeq ($(wildcard $(SDCC290_BIN_DIR)/sdasz80),$(SDCC290_BIN_DIR)/sdasz80)
 SDASZ80 ?= $(SDCC290_BIN_DIR)/sdasz80
+else ifeq ($(wildcard $(SDCC290_BIN_DIR)/as-z80-2.9.0),$(SDCC290_BIN_DIR)/as-z80-2.9.0)
+SDASZ80 ?= $(SDCC290_BIN_DIR)/as-z80-2.9.0
 else
 SDASZ80 ?= sdasz80
 endif
 
 ifeq ($(wildcard $(SDCC290_BIN_DIR)/sdar),$(SDCC290_BIN_DIR)/sdar)
 SDAR ?= $(SDCC290_BIN_DIR)/sdar
+else ifeq ($(wildcard $(SDCC290_BIN_DIR)/sdcclib-2.9.0),$(SDCC290_BIN_DIR)/sdcclib-2.9.0)
+SDAR ?= $(SDCC290_BIN_DIR)/sdcclib-2.9.0
 else
 SDAR ?= sdar
 endif
 
 ifeq ($(wildcard $(SDCC290_BIN_DIR)/sdldz80),$(SDCC290_BIN_DIR)/sdldz80)
 SDLDZ80 ?= $(SDCC290_BIN_DIR)/sdldz80
+else ifeq ($(wildcard $(SDCC290_BIN_DIR)/link-z80-2.9.0),$(SDCC290_BIN_DIR)/link-z80-2.9.0)
+SDLDZ80 ?= $(SDCC290_BIN_DIR)/link-z80-2.9.0
 else
 SDLDZ80 ?= sdldz80
 endif

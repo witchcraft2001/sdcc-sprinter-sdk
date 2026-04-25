@@ -10,7 +10,7 @@ Cross-platform C development toolkit for the **ZX Sprinter** computer (Z80 CPU, 
 - **Sprinter hardware API** — DSS OS calls, BIOS, video modes, mouse driver, port I/O
 - **Compatibility headers** — `io.h`, `dos.h`, `dir.h` for easy porting from Turbo C / SOLID C
 - **Granular linking** — each function in a separate module; linker includes only what's used
-- **15 example programs** with Makefiles — from "Hello World" to EXEC/error handling demo
+- **19 example programs** with Makefiles — from "Hello World" to EXEC/error handling, APPINFO, ENVIRON and CALL demos
 - **ihx2exe.py** tool — converts SDCC output to Sprinter `.EXE` format
 - **ihx2bin.py** tool — converts SDCC output to raw binary (for overlays and resident code)
 - **Raw binary support** — build code fragments for loading at arbitrary addresses
@@ -39,14 +39,14 @@ pacman -S mingw-w64-x86_64-sdcc mingw-w64-x86_64-python3 make
 
 **Windows (manual):**
 1. Install [Python 3.x](https://www.python.org/downloads/) (add to PATH)
-2. Install SDCC 2.9.0 and make `sdcc290` available. The build also needs `sdcpp-2.9.0`:
-   if `sdcc290` is a wrapper script placed next to an `opt/sdcc-2.9.0/bin` tree, the SDK will find `sdcpp-2.9.0` automatically.
-   `sdasz80`, `sdldz80`, and `sdar` are taken from `PATH` unless matching wrappers also exist in the configured directory.
+2. Install SDCC 2.9.0.
+   The recommended setup is to point the SDK at the original SDCC 2.9.0 `bin` directory.
+   That directory should contain `sdcc` or `sdcc-2.9.0`, `sdcpp-2.9.0`, and either the upstream tool names `as-z80-2.9.0`, `sdcclib-2.9.0`, `link-z80-2.9.0` or repackaged equivalents `sdasz80`, `sdar`, `sdldz80`.
 3. Install [GNU Make](https://gnuwin32.sourceforge.net/packages/make.htm) or use MSYS2/Git Bash
 
 **Verify installation:**
 ```bash
-sdcc290 --version # Should show SDCC 2.9.0
+/absolute/path/to/sdcc-2.9.0/bin/sdcc --version
 python3 --version # Should show 3.x
 make --version    # GNU Make
 ```
@@ -54,14 +54,24 @@ make --version    # GNU Make
 If several SDCC versions are installed, the SDK can be pinned to a specific 2.9.0 toolchain directory:
 
 ```bash
-make SDCC290_BIN_DIR=/absolute/path/to/sdcc290/bin
-make examples SDCC290_BIN_DIR=/absolute/path/to/sdcc290/bin
+make SDCC290_BIN_DIR=/absolute/path/to/sdcc-2.9.0/bin
+make examples SDCC290_BIN_DIR=/absolute/path/to/sdcc-2.9.0/bin
 ```
 
 Or create `config.local.mk` from `config.local.mk.example`:
 
 ```makefile
-SDCC290_BIN_DIR := /absolute/path/to/sdcc290/bin
+SDCC290_BIN_DIR := /absolute/path/to/sdcc-2.9.0/bin
+```
+
+If you prefer not to use `SDCC290_BIN_DIR`, you can pin each tool explicitly:
+
+```makefile
+SDCC    := /absolute/path/to/sdcc-2.9.0/bin/sdcc
+SDCPP   := /absolute/path/to/sdcc-2.9.0/bin/sdcpp-2.9.0
+SDASZ80 := /absolute/path/to/sdcc-2.9.0/bin/as-z80-2.9.0
+SDAR    := /absolute/path/to/sdcc-2.9.0/bin/sdcclib-2.9.0
+SDLDZ80 := /absolute/path/to/sdcc-2.9.0/bin/link-z80-2.9.0
 ```
 
 ### 2. Build the SDK
@@ -180,10 +190,8 @@ include $(SDK_DIR)examples/common.mk
 Then run `make` to build `myapp.exe`.
 
 If the machine has multiple SDCC versions installed, pin the desired 2.9.0 toolchain with `config.local.mk` or pass `SDCC290_BIN_DIR=...` on the `make` command line.
-The recommended value is either:
-`/path/to/dir/with/sdcc290`
-or:
-`/path/to/opt/sdcc-2.9.0/bin`
+Recommended value:
+`/path/to/sdcc-2.9.0/bin`
 
 For multiple source files:
 ```makefile
@@ -485,10 +493,10 @@ sdcc-sprinter-sdk/
 │   ├── ihx2bin.py          # Intel HEX → raw binary converter
 │   ├── install-sdcc.sh     # SDCC installer script
 │   └── build-sjasmplus.sh  # sjasmplus build script
-├── examples/               # 15 example programs
+├── examples/               # 19 example programs
 │   ├── common.mk           # Shared build rules (EXE output)
 │   ├── common_bin.mk       # Build rules for raw binary modules
-│   ├── 01_hello/ .. 15_exec/
+│   ├── 01_hello/ .. 19_console/
 ├── build/
 │   ├── crt0.rel            # Compiled CRT0
 │   └── sprinter.lib        # Library archive
@@ -499,17 +507,16 @@ sdcc-sprinter-sdk/
 
 ### Selective Linking
 
-Each library function is compiled into a separate `.rel` object file and packed into `sprinter.lib` using `sdar`. The SDCC linker resolves only referenced symbols — unused functions add zero code to your binary.
+Each library function is compiled into a separate `.rel` object file and packed into `sprinter.lib` using the SDCC librarian (`sdar` or `sdcclib-2.9.0`, depending on the toolchain package). The SDCC linker resolves only referenced symbols — unused functions add zero code to your binary.
 
 Example: a program using only `puts("hello")` links ~170 bytes total. A program using `printf()` links ~2.8 KB (printf engine + fputc + dss_putchar).
 
 ### Calling Convention
 
-The SDK uses SDCC's default `sdcccall(1)` (register-based):
-- 1st param: `u8` → A, `u16/ptr` → HL
-- 2nd param: `u8` → L (if 1st in A), `u16/ptr` → DE
-- Return: `u8` → A, `u16/ptr` → DE
-- Callee-saved: IX only
+The SDK targets the default ABI of SDCC 2.9.0:
+- most function arguments are passed on the stack
+- scalar return values come back in `L` / `HL`
+- wrapper code preserves the caller context expected by SDCC 2.9.0, especially `IX`
 
 ### DSS System Calls
 
