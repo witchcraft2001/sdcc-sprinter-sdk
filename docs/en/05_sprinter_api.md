@@ -381,6 +381,9 @@ u8   video_getmode(void);
 void video_swap(void);
 void video_vsync(void);
 void video_setpal(u8 index, u8 r, u8 g, u8 b);
+void video_setpal_range(u8 first, u16 count, const video_rgb6_t *colors);
+void video_setpal_range8(u8 first, u16 count, const video_rgb8_t *colors);
+void video_setpal_graf(void);
 void video_mapvram(u8 win, u8 page);
 void video_safe_porty(void);
 ```
@@ -390,6 +393,9 @@ void video_safe_porty(void);
 - `video_swap()` flips display pages for double buffering.
 - `video_vsync()` waits for the next vertical retrace.
 - `video_setpal(index, r, g, b)` sets one palette entry using 8-bit RGB values (`0..255` each).
+- `video_setpal_range(first, count, colors)` sets a range of colors using 6-bit RGB values (`0..63`). `count` may be up to 255.
+- `video_setpal_range8(first, count, colors)` sets a range of colors using 8-bit RGB values (`0..255`) and scales them to the hardware range.
+- `video_setpal_graf()` loads the built-in BIOS GRAF palette.
 - `video_mapvram(win, page)` maps a VRAM page into memory window `0..3`. VRAM pages typically start at `0x50`.
 - `video_safe_porty()` restores `PORT_Y` to a safe value after raw pixel access.
 
@@ -403,6 +409,38 @@ void video_safe_porty(void);
 #define TEXT_COLS        80
 #define TEXT_ROWS        32
 ```
+
+## sprinter/gfx.h -- Optional Graphics Library
+
+`gfx.lib` is separate from the base `sprinter.lib` and is linked only when requested. It targets `320x256x256` mode and provides a shared layer for sprites, blits, background restore, and future graphics primitives.
+
+```c
+#include <sprinter/gfx.h>
+
+void gfx_draw_sprite8(u8 screen, u16 x, u8 y, const void *data, u8 flags);
+void gfx_draw_sprite16(u8 screen, u16 x, u8 y, const void *data, u8 flags);
+void gfx_draw_sprite24(u8 screen, u16 x, u8 y, const void *data, u8 flags);
+
+void gfx_restore_rect(u8 screen, u16 x, u8 y, u8 width, u8 height);
+void gfx_restore_sprite8(u8 screen, u16 x, u8 y);
+void gfx_restore_sprite16(u8 screen, u16 x, u8 y);
+void gfx_restore_sprite24(u8 screen, u16 x, u8 y);
+
+void gfx_copy_rect(u8 dst_screen, u8 src_screen, u16 x, u8 y, u8 width, u8 height);
+void gfx_copy_screen(u8 dst_screen, u8 src_screen);
+void gfx_flip(void);
+
+i16 gfx_load_resource_pages(const char *path, u8 first_page, u8 page_count);
+u8  gfx_draw_resource(u8 screen, u16 x, u8 y, u8 base_page,
+                      const gfx_resource_t *resources, u8 id, u8 flags);
+```
+
+Key flags:
+- `GFX_OPAQUE` -- normal copy.
+- `GFX_MASKED` -- color `0xFF` is transparent.
+- `GFX_VRAM_ONLY` -- draw to VRAM only, without updating the shadow page.
+
+Sprites that are 16 or 24 pixels wide, `gfx_restore_rect()`, and `gfx_copy_rect()` use the Sprinter hardware accelerator. To link a single example, set `EXTRA_LIBS=$(SDK_DIR)build/gfx.lib`; from the SDK root, build the archive with `make gfx`.
 
 ## sprinter/mouse.h -- Mouse Driver
 

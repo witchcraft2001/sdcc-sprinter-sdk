@@ -381,6 +381,9 @@ u8   video_getmode(void);
 void video_swap(void);
 void video_vsync(void);
 void video_setpal(u8 index, u8 r, u8 g, u8 b);
+void video_setpal_range(u8 first, u16 count, const video_rgb6_t *colors);
+void video_setpal_range8(u8 first, u16 count, const video_rgb8_t *colors);
+void video_setpal_graf(void);
 void video_mapvram(u8 win, u8 page);
 void video_safe_porty(void);
 ```
@@ -390,6 +393,9 @@ void video_safe_porty(void);
 - `video_swap()` меняет отображаемую страницу для double buffering.
 - `video_vsync()` ждёт следующий vertical retrace.
 - `video_setpal(index, r, g, b)` задаёт один цвет палитры через 8-битные RGB-компоненты (`0..255`).
+- `video_setpal_range(first, count, colors)` задаёт диапазон цветов через 6-битные RGB-компоненты (`0..63`). `count` может быть до 255.
+- `video_setpal_range8(first, count, colors)` задаёт диапазон цветов через 8-битные RGB-компоненты (`0..255`) с масштабированием до аппаратного диапазона.
+- `video_setpal_graf()` загружает встроенную BIOS-палитру GRAF.
 - `video_mapvram(win, page)` подключает VRAM-страницу в окно памяти `0..3`. Обычно VRAM-страницы начинаются с `0x50`.
 - `video_safe_porty()` возвращает `PORT_Y` в безопасное состояние после прямой работы с пикселями.
 
@@ -403,6 +409,38 @@ void video_safe_porty(void);
 #define TEXT_COLS        80
 #define TEXT_ROWS        32
 ```
+
+## sprinter/gfx.h -- Опциональная графическая библиотека
+
+`gfx.lib` не входит в основную `sprinter.lib` и линкуется только явно. Библиотека рассчитана на режим `320x256x256` и предоставляет общий слой для спрайтов, blit-операций, восстановления фона и будущих графических примитивов.
+
+```c
+#include <sprinter/gfx.h>
+
+void gfx_draw_sprite8(u8 screen, u16 x, u8 y, const void *data, u8 flags);
+void gfx_draw_sprite16(u8 screen, u16 x, u8 y, const void *data, u8 flags);
+void gfx_draw_sprite24(u8 screen, u16 x, u8 y, const void *data, u8 flags);
+
+void gfx_restore_rect(u8 screen, u16 x, u8 y, u8 width, u8 height);
+void gfx_restore_sprite8(u8 screen, u16 x, u8 y);
+void gfx_restore_sprite16(u8 screen, u16 x, u8 y);
+void gfx_restore_sprite24(u8 screen, u16 x, u8 y);
+
+void gfx_copy_rect(u8 dst_screen, u8 src_screen, u16 x, u8 y, u8 width, u8 height);
+void gfx_copy_screen(u8 dst_screen, u8 src_screen);
+void gfx_flip(void);
+
+i16 gfx_load_resource_pages(const char *path, u8 first_page, u8 page_count);
+u8  gfx_draw_resource(u8 screen, u16 x, u8 y, u8 base_page,
+                      const gfx_resource_t *resources, u8 id, u8 flags);
+```
+
+Основные флаги:
+- `GFX_OPAQUE` -- обычное копирование.
+- `GFX_MASKED` -- цвет `0xFF` считается прозрачным.
+- `GFX_VRAM_ONLY` -- рисовать только в VRAM, не обновляя теневую страницу.
+
+Спрайты шириной 16 и 24 пикселя, `gfx_restore_rect()` и `gfx_copy_rect()` используют аппаратный акселератор Sprinter. Для линковки одного примера укажите `EXTRA_LIBS=$(SDK_DIR)build/gfx.lib`; из корня SDK можно собрать архив отдельно командой `make gfx`.
 
 ## sprinter/mouse.h -- Драйвер мыши
 

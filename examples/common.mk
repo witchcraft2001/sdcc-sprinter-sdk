@@ -20,6 +20,7 @@ BUILD       = _build
 INC         = -I$(SDK_DIR)include
 CRT0        = $(SDK_DIR)build/crt0.rel
 SPRLIB      = $(SDK_DIR)build/sprinter.lib
+EXTRA_LIBS  ?=
 
 APP_RELS    = $(patsubst %.c,$(BUILD)/%.rel,$(SRCS))
 APP_OBJS    = $(APP_RELS:.rel=.o)
@@ -42,12 +43,13 @@ $(BUILD)/%.rel: %.c | $(BUILD)
 	$(SDASZ80) -plosgff $@ $(basename $@).asm
 	cp $@ $(basename $@).o
 
-$(BUILD)/$(APP).ihx: $(CRT0) $(SPRLIB) $(APP_RELS)
+$(BUILD)/$(APP).ihx: $(CRT0) $(SPRLIB) $(EXTRA_LIBS) $(APP_RELS)
 	printf '%s\n' '-mjx' > $(BUILD)/$(APP).lk
 	printf '%s\n' '-i $@' >> $(BUILD)/$(APP).lk
 	printf '%s\n' '-b _CODE = $(CODE_LOC)' >> $(BUILD)/$(APP).lk
 	if [ -n "$(DATA_LOC)" ]; then printf '%s\n' '-b _DATA = $(DATA_LOC)' >> $(BUILD)/$(APP).lk; fi
 	printf '%s\n' '-l $(abspath $(SPRLIB))' >> $(BUILD)/$(APP).lk
+	for lib in $(EXTRA_LIBS); do printf '%s\n' "-l $$(cd "$$(dirname "$$lib")" && pwd)/$$(basename "$$lib")" >> $(BUILD)/$(APP).lk; done
 	printf '%s\n' '$(abspath $(CRT0_LINK))' >> $(BUILD)/$(APP).lk
 	for rel in $(APP_LINK); do printf '%s\n' "$$rel" >> $(BUILD)/$(APP).lk; done
 	printf '%s\n' '-e' >> $(BUILD)/$(APP).lk

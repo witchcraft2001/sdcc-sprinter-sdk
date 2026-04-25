@@ -18,6 +18,7 @@ SDK_CPPFLAGS = $(SDCPPFLAGS) -I$(SDK_DIR)include
 
 # --- Directories ---
 LIB_SRC_DIR  = $(SDK_DIR)lib/src
+GFX_SRC_DIR  = $(SDK_DIR)lib/gfx
 LIB_DIR      = $(SDK_DIR)lib
 BUILD_DIR    = $(SDK_DIR)build
 INCLUDE_DIR  = $(SDK_DIR)include
@@ -48,11 +49,19 @@ LIB_ASM_OBJS = $(LIB_ASM_RELS:.rel=.o)
 CRT0_REL     = $(BUILD_DIR)/crt0.rel
 SPRINTER_LIB = $(BUILD_DIR)/sprinter.lib
 
+GFX_C_SRCS    = $(wildcard $(GFX_SRC_DIR)/*.c)
+GFX_ASM_SRCS  = $(wildcard $(GFX_SRC_DIR)/*.s)
+GFX_C_RELS    = $(patsubst %.c,$(BUILD_DIR)/%.rel,$(notdir $(GFX_C_SRCS)))
+GFX_C_OBJS    = $(GFX_C_RELS:.rel=.o)
+GFX_ASM_RELS  = $(patsubst %.s,$(BUILD_DIR)/%.rel,$(notdir $(GFX_ASM_SRCS)))
+GFX_ASM_OBJS  = $(GFX_ASM_RELS:.rel=.o)
+GFX_LIB       = $(BUILD_DIR)/gfx.lib
+
 # VPATH: let make find .c files in subdirectories
-VPATH = $(sort $(dir $(LIB_C_SRCS) $(LIB_ASM_SRCS) $(LIB_EXTRA_ASM_SRCS)))
+VPATH = $(sort $(dir $(LIB_C_SRCS) $(LIB_ASM_SRCS) $(LIB_EXTRA_ASM_SRCS) $(GFX_C_SRCS) $(GFX_ASM_SRCS)))
 
 # =========================================================================
-.PHONY: all lib examples clean install tools help
+.PHONY: all lib gfx examples clean install tools help
 
 all: lib
 
@@ -60,6 +69,7 @@ help:
 	@echo "ZX Sprinter SDCC SDK"
 	@echo ""
 	@echo "  make                  Build library with SDCC 2.9.0"
+	@echo "  make gfx              Build optional graphics library"
 	@echo "  make examples         Build all examples"
 	@echo "  make clean            Clean"
 	@echo "  make tools            Build sjasmplus"
@@ -92,6 +102,11 @@ SPRINTER_LIB_INPUTS = $(LIB_C_OBJS) $(LIB_ASM_OBJS)
 $(SPRINTER_LIB): $(LIB_C_RELS) $(LIB_ASM_RELS)
 	$(SDAR) r $@ $(SPRINTER_LIB_INPUTS)
 
+GFX_LIB_INPUTS = $(GFX_C_OBJS) $(GFX_ASM_OBJS)
+
+$(GFX_LIB): $(GFX_C_RELS) $(GFX_ASM_RELS)
+	$(SDAR) r $@ $(GFX_LIB_INPUTS)
+
 # --- Build library ---
 lib: $(CRT0_REL) $(SPRINTER_LIB)
 	@echo ""
@@ -99,8 +114,13 @@ lib: $(CRT0_REL) $(SPRINTER_LIB)
 	@echo "CRT0: $(CRT0_REL)"
 	@echo "Library: $(SPRINTER_LIB) ($(shell expr $(words $(LIB_C_RELS)) + $(words $(LIB_ASM_RELS))) modules)"
 
+gfx: lib $(GFX_LIB)
+	@echo ""
+	@echo "=== GFX Library Built ==="
+	@echo "Library: $(GFX_LIB) ($(shell expr $(words $(GFX_C_RELS)) + $(words $(GFX_ASM_RELS))) modules)"
+
 # --- Build all examples ---
-examples: lib
+examples: lib gfx
 	@for dir in $(SDK_DIR)examples/*/; do \
 		echo "=== Building $$(basename $$dir) ==="; \
 		$(MAKE) -C "$$dir" SDK_DIR=$(SDK_DIR) || exit 1; \

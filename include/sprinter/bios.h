@@ -24,6 +24,7 @@
 /* Graphics */
 #define BIOS_PUTPIXEL   0xA1    /* Put pixel: HL=X, DE=Y, B=color */
 #define BIOS_SETPAL     0xA4    /* Set palette: HL=index, D=R, E=G, A=B */
+#define BIOS_SETPAL_INIT 0xA6   /* Set preset palette */
 
 /* Windows */
 #define BIOS_OPENWIN    0xB0    /* Open text window */

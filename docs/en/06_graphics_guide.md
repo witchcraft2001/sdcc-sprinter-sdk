@@ -69,6 +69,24 @@ video_setpal(1, 255, 0, 0);       /* Red */
 video_setpal(2, 0, 255, 0);       /* Green */
 ```
 
+### Palette Ranges
+
+For a shared graphics palette, it is more practical to load several entries at once:
+
+```c
+static const video_rgb6_t palette[] = {
+    {0, 0, 0},
+    {63, 0, 0},
+    {0, 63, 0},
+    {0, 0, 63}
+};
+
+video_setpal_range(0, 4, palette);
+video_setpal_graf();          /* built-in GRAF palette */
+```
+
+`video_setpal_range()` takes hardware 6-bit components (`0..63`), while `video_setpal_range8()` takes normal 8-bit RGB components (`0..255`) and scales them. This API lives in the base `sprinter.lib`, so it can be shared by `gfx.lib` and future geometry primitive layers.
+
 ## Drawing Pixels
 
 Use `bios_putpixel()` to draw individual pixels:
@@ -167,6 +185,57 @@ video_swap();
 ```
 
 The `video_swap()` function toggles the display buffer via the RGMOD port. While the screen shows one buffer, you draw into the other.
+
+## Optional gfx.lib
+
+Sprites, screen copies, and background restore are provided by the separate `build/gfx.lib` archive. It is not linked automatically and does not increase EXE size unless used:
+
+```make
+EXTRA_LIBS = $(SDK_DIR)build/gfx.lib
+```
+
+The library targets `VMODE_320` only and uses the same palette configured through `video_setpal*()`.
+
+```c
+#include <sprinter/gfx.h>
+
+gfx_draw_sprite8(GFX_SCREEN_0, 40, 40, sprite8, GFX_MASKED);
+gfx_draw_sprite16(GFX_SCREEN_0, 80, 40, sprite16, GFX_OPAQUE);
+gfx_draw_sprite24(GFX_SCREEN_1, 120, 40, sprite24, GFX_MASKED);
+
+gfx_restore_sprite16(GFX_SCREEN_0, 80, 40);
+gfx_copy_screen(GFX_SCREEN_1, GFX_SCREEN_0);
+gfx_flip();
+```
+
+Fixed sprite sizes are 8x8, 16x16, and 24x24. Color `0xFF` is transparent when `GFX_MASKED` is set. 16x16 and 24x24 sprites, rectangle copies, and background restore use the Sprinter hardware accelerator.
+
+Restore works by copying from the shadow page of the same screen. To draw something temporarily without updating the shadow page, use `GFX_VRAM_ONLY`, then call `gfx_restore_rect()` or one of the `gfx_restore_sprite*()` helpers.
+
+## PNG Resources
+
+Graphics can be embedded as C arrays or prepared from PNG files before compilation:
+
+```bash
+python3 tools/png2gfx.py \
+    --out gfxdemo.gfx \
+    --header res.h \
+    --name demo_gfx \
+    assets/sprite16.png assets/sprite24.png
+```
+
+The tool accepts non-interlaced 8-bit RGB/RGBA/indexed PNGs, builds one shared palette with up to 255 opaque colors, uses `0xFF` as transparent pixels, and writes a page-friendly `.gfx` file where resource payloads do not cross 16 KB page boundaries. The generated header contains `video_rgb6_t *_palette[]` and `gfx_resource_t *_resources[]`.
+
+At runtime, load the file into paged memory and pass the base page plus resource id when drawing:
+
+```c
+page = dss_getmem();
+gfx_load_resource_pages("GFXDEMO.GFX", page, 1);
+video_setpal_range(0, DEMO_GFX_PALETTE_COUNT, demo_gfx_palette);
+gfx_draw_resource(GFX_SCREEN_0, 96, 80, page, demo_gfx_resources, 0, 0);
+```
+
+Use 8.3 filenames for all runtime resources. DSS cannot open long filenames, so generated files such as `GFXDEMO.GFX` and generated headers such as `res.h` intentionally use short names.
 
 ## Complete Graphics Example
 

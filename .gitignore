@@ -2,6 +2,9 @@
 build/
 examples/*/_build/
 examples/*/*.exe
+examples/21_gfx_resources/assets/
+examples/21_gfx_resources/resources.h
+examples/21_gfx_resources/gfxdemo.gfx
 
 # SDCC output files
 *.ihx

@@ -1,6 +1,6 @@
 # Examples
 
-The SDK includes 19 example programs demonstrating various SDK features. All examples are in the `examples/` directory, each with its own `main.c` and `Makefile`.
+The SDK includes 21 example programs demonstrating various SDK features. All examples are in the `examples/` directory, each with its own `main.c` and `Makefile`.
 
 ## Building Examples
 
@@ -191,7 +191,27 @@ Reads the current DSS video mode/page, reapplies the same mode, clears a text wi
 
 **Demonstrates:** `dss_getvmod()`, `dss_setvmod()`, `dss_clear()`, `dss_scroll()`, `dss_gotoxy()`.
 
+### 20_gfxst -- Static gfx.lib Sprites (~2 KB)
+
+Demonstrates the separate `gfx.lib` archive: fixed 8x8, 16x16, and 24x24 sprites, transparent color `0xFF`, drawing to both graphics screens, `GFX_VRAM_ONLY`, and background restore from the shadow page.
+
+Expected output: a black graphics screen with four small X/cross sprites. After the first key press, the rightmost temporary sprite is restored from the shadow page; after the second key press, the example returns to text mode.
+
+**Demonstrates:** `gfx_draw_sprite8()`, `gfx_draw_sprite16()`, `gfx_draw_sprite24()`, `gfx_restore_sprite16()`, `gfx_copy_screen()`, `video_setpal_range()`.
+
+### 21_gfx_resources -- PNG gfx.lib Resources (~3 KB + `.gfx`)
+
+Shows resource preparation through `tools/png2gfx.py`, generated `.gfx` and `res.h`, loading the file into paged memory, installing the shared palette with `video_setpal_range()`, and drawing resources by id.
+
+Expected output: a black graphics screen with two X/cross sprites loaded from `GFXDEMO.GFX`. The example flips to the copied graphics screen after drawing, then flips back on the next key press.
+
+**Demonstrates:** `gfx_load_resource_pages()`, `gfx_draw_resource()`, `gfx_resource_t`, generated PNG resources, external `EXTRA_LIBS`.
+
 ## Creating Your Own Example
+
+### Target Filename Limits
+
+DSS does not support long filenames. Any file copied to the target floppy image must use a DOS 8.3 name: up to 8 characters for the base name and up to 3 for the extension. This includes example executables, `.gfx` resources, generated assets, and any data files opened by the program. `scripts/make_floppy.sh` checks deployable `.exe` and `.gfx` files and fails if a long filename is found.
 
 1. Create a new directory:
 
@@ -213,7 +233,7 @@ void main(void) {
 3. Create a `Makefile` with three lines:
 
 ```makefile
-APP  = myproject
+APP  = myproj
 SRCS = main.c
 include ../common.mk
 ```
@@ -225,7 +245,7 @@ cd examples/20_myproject
 make
 ```
 
-5. The result is `myproject.exe`, ready to run on the Sprinter.
+5. The result is `myproj.exe`, ready to run on the Sprinter.
 
 ### Using an External Project Directory
 
