@@ -295,7 +295,7 @@ void dss_settime(dss_date_t *d, dss_time_t *t) SPRINTER_NAKED_DECL;
  */
 void dss_setwin(u8 win, u8 page) SPRINTER_NAKED_DECL;
 
-/** Allocate a memory page. Returns page number or 0xFF on error */
+/** Allocate a memory page. Returns page/block id, or 0xFF if DSS GETMEM reports an error */
 u8 dss_getmem(void) SPRINTER_NAKED_DECL;
 
 /** Free a memory page */

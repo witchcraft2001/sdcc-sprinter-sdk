@@ -226,7 +226,7 @@ void dss_meminfo(u16 *total, u16 *free_pages);
 ```
 
 - `dss_setwin(win, page)` maps a RAM page into memory window `0..3`.
-- `dss_getmem()` allocates one RAM page and returns its page number, or `0xFF` if none are available.
+- `dss_getmem()` allocates one RAM page and returns its page/block id. If DSS GETMEM reports an error (`CF=1`, `A=error code`), the SDK wrapper returns `0xFF`; callers must check this before using the value with `dss_setwin()` or `dss_freemem()`.
 - `dss_freemem(page)` returns a page to DSS.
 - `dss_meminfo(total, free_pages)` reports the total number of managed pages and how many are currently free.
 

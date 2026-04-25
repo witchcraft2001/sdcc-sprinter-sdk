@@ -9,6 +9,10 @@ _dss_getmem::
         ld      c,#0x3D
         rst     #0x10
         pop     ix
+        jr      c,1$
         ld      l,a
         ld      h,#0x00
+        ret
+1$:
+        ld      hl,#0x00FF
         ret
