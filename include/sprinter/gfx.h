@@ -41,6 +41,18 @@ void gfx_draw_sprite8(u8 screen, u16 x, u8 y, const void *data, u8 flags) SPRINT
 void gfx_draw_sprite16(u8 screen, u16 x, u8 y, const void *data, u8 flags) SPRINTER_NAKED_DECL;
 void gfx_draw_sprite24(u8 screen, u16 x, u8 y, const void *data, u8 flags) SPRINTER_NAKED_DECL;
 
+void gfx_draw_pixel(u8 screen, u16 x, u8 y, u8 color, u8 flags);
+void gfx_draw_hline(u8 screen, u16 x, u8 y, u16 width, u8 color, u8 flags);
+void gfx_draw_vline(u8 screen, u16 x, u8 y, u8 height, u8 color, u8 flags);
+void gfx_draw_line(u8 screen, u16 x0, u8 y0, u16 x1, u8 y1, u8 color, u8 flags);
+void gfx_draw_line_thick(u8 screen, u16 x0, u8 y0, u16 x1, u8 y1,
+                         u8 thickness, u8 color, u8 flags);
+void gfx_draw_rect(u8 screen, u16 x, u8 y, u16 width, u8 height, u8 color, u8 flags);
+void gfx_draw_rect_thick(u8 screen, u16 x, u8 y, u16 width, u8 height,
+                         u8 thickness, u8 color, u8 flags);
+void gfx_fill_rect(u8 screen, u16 x, u8 y, u16 width, u8 height, u8 color, u8 flags);
+void gfx_draw_circle(u8 screen, u16 cx, u8 cy, u8 radius, u8 color, u8 flags);
+
 void gfx_restore_rect(u8 screen, u16 x, u8 y, u8 width, u8 height) SPRINTER_NAKED_DECL;
 void gfx_restore_sprite8(u8 screen, u16 x, u8 y);
 void gfx_restore_sprite16(u8 screen, u16 x, u8 y);

@@ -412,7 +412,7 @@ void video_safe_porty(void);
 
 ## sprinter/gfx.h -- Optional Graphics Library
 
-`gfx.lib` is separate from the base `sprinter.lib` and is linked only when requested. It targets `320x256x256` mode and provides a shared layer for sprites, blits, background restore, and future graphics primitives.
+`gfx.lib` is separate from the base `sprinter.lib` and is linked only when requested. It targets `320x256x256` mode and provides a shared layer for sprites, blits, background restore, and graphics primitives.
 
 ```c
 #include <sprinter/gfx.h>
@@ -420,6 +420,18 @@ void video_safe_porty(void);
 void gfx_draw_sprite8(u8 screen, u16 x, u8 y, const void *data, u8 flags);
 void gfx_draw_sprite16(u8 screen, u16 x, u8 y, const void *data, u8 flags);
 void gfx_draw_sprite24(u8 screen, u16 x, u8 y, const void *data, u8 flags);
+
+void gfx_draw_pixel(u8 screen, u16 x, u8 y, u8 color, u8 flags);
+void gfx_draw_hline(u8 screen, u16 x, u8 y, u16 width, u8 color, u8 flags);
+void gfx_draw_vline(u8 screen, u16 x, u8 y, u8 height, u8 color, u8 flags);
+void gfx_draw_line(u8 screen, u16 x0, u8 y0, u16 x1, u8 y1, u8 color, u8 flags);
+void gfx_draw_line_thick(u8 screen, u16 x0, u8 y0, u16 x1, u8 y1,
+                         u8 thickness, u8 color, u8 flags);
+void gfx_draw_rect(u8 screen, u16 x, u8 y, u16 width, u8 height, u8 color, u8 flags);
+void gfx_draw_rect_thick(u8 screen, u16 x, u8 y, u16 width, u8 height,
+                         u8 thickness, u8 color, u8 flags);
+void gfx_fill_rect(u8 screen, u16 x, u8 y, u16 width, u8 height, u8 color, u8 flags);
+void gfx_draw_circle(u8 screen, u16 cx, u8 cy, u8 radius, u8 color, u8 flags);
 
 void gfx_restore_rect(u8 screen, u16 x, u8 y, u8 width, u8 height);
 void gfx_restore_sprite8(u8 screen, u16 x, u8 y);
@@ -440,7 +452,9 @@ Key flags:
 - `GFX_MASKED` -- color `0xFF` is transparent.
 - `GFX_VRAM_ONLY` -- draw to VRAM only, without updating the shadow page.
 
-Sprites that are 16 or 24 pixels wide, `gfx_restore_rect()`, and `gfx_copy_rect()` use the Sprinter hardware accelerator. To link a single example, set `EXTRA_LIBS=$(SDK_DIR)build/gfx.lib`; from the SDK root, build the archive with `make gfx`.
+Primitive functions use palette indices from the current graphics palette and accept the same `screen` and `flags` arguments as sprite functions. For `gfx_draw_vline()` and `gfx_fill_rect()`, `height == 0` means 256 rows, matching the existing full-screen copy convention.
+
+Sprites that are 16 or 24 pixels wide, `gfx_restore_rect()`, and `gfx_copy_rect()` use the Sprinter hardware accelerator. Primitive functions are implemented as clipped direct VRAM writes. To link a single example, set `EXTRA_LIBS=$(SDK_DIR)build/gfx.lib`; from the SDK root, build the archive with `make gfx`.
 
 ## sprinter/mouse.h -- Mouse Driver
 

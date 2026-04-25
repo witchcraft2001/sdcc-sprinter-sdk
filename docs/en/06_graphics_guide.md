@@ -212,6 +212,24 @@ Fixed sprite sizes are 8x8, 16x16, and 24x24. Color `0xFF` is transparent when `
 
 Restore works by copying from the shadow page of the same screen. To draw something temporarily without updating the shadow page, use `GFX_VRAM_ONLY`, then call `gfx_restore_rect()` or one of the `gfx_restore_sprite*()` helpers.
 
+### Graphics Primitives
+
+`gfx.lib` also provides simple primitives that use the same palette and screen arguments:
+
+```c
+gfx_draw_pixel(GFX_SCREEN_0, 10, 20, 15, GFX_OPAQUE);
+gfx_draw_line(GFX_SCREEN_0, 20, 30, 160, 90, 8, GFX_OPAQUE);
+gfx_draw_line_thick(GFX_SCREEN_0, 20, 100, 220, 40, 3, 4, GFX_OPAQUE);
+gfx_draw_rect(GFX_SCREEN_0, 12, 18, 296, 220, 15, GFX_OPAQUE);
+gfx_draw_rect_thick(GFX_SCREEN_0, 24, 32, 80, 40, 2, 10, GFX_OPAQUE);
+gfx_fill_rect(GFX_SCREEN_0, 20, 204, 80, 22, 1, GFX_OPAQUE);
+gfx_draw_circle(GFX_SCREEN_0, 260, 190, 24, 14, GFX_OPAQUE);
+```
+
+Lines are clipped to the 320x256 screen. `gfx_draw_line_thick()` uses a square brush with the requested thickness, so diagonal thick lines look like a stepped band. `gfx_fill_rect()` and `gfx_draw_vline()` treat `height == 0` as 256 rows, which is useful for full-screen operations. Use `GFX_VRAM_ONLY` for temporary primitives that should later be removed by restoring from the shadow page.
+
+The `20_gfxst` example demonstrates the primitive layer together with sprites: a white screen border, a red filled rectangle, a thin gray line, a thick blue diagonal line, a white circle, and four X/cross sprites.
+
 ## PNG Resources
 
 Graphics can be embedded as C arrays or prepared from PNG files before compilation:

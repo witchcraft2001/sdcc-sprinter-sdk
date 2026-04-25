@@ -195,9 +195,9 @@ Reads the current DSS video mode/page, reapplies the same mode, clears a text wi
 
 Demonstrates the separate `gfx.lib` archive: fixed 8x8, 16x16, and 24x24 sprites, transparent color `0xFF`, drawing to both graphics screens, `GFX_VRAM_ONLY`, and background restore from the shadow page.
 
-Expected output: a black graphics screen with four small X/cross sprites. After the first key press, the rightmost temporary sprite is restored from the shadow page; after the second key press, the example returns to text mode.
+Expected output: a black graphics screen with a white border, a red filled rectangle in the lower-left area, a thin gray diagonal line, a thick blue diagonal line, a white circle in the lower-right area, and four small X/cross sprites. After the first key press, the rightmost temporary sprite is restored from the shadow page; after the second key press, the example returns to text mode.
 
-**Demonstrates:** `gfx_draw_sprite8()`, `gfx_draw_sprite16()`, `gfx_draw_sprite24()`, `gfx_restore_sprite16()`, `gfx_copy_screen()`, `video_setpal_range()`.
+**Demonstrates:** `gfx_draw_sprite8()`, `gfx_draw_sprite16()`, `gfx_draw_sprite24()`, `gfx_draw_line()`, `gfx_draw_line_thick()`, `gfx_draw_rect()`, `gfx_fill_rect()`, `gfx_draw_circle()`, `gfx_restore_sprite16()`, `video_setpal_range()`.
 
 ### 21_gfx_resources -- PNG gfx.lib Resources (~3 KB + `.gfx`)
 

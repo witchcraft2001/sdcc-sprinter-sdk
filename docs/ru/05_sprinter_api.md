@@ -412,7 +412,7 @@ void video_safe_porty(void);
 
 ## sprinter/gfx.h -- Опциональная графическая библиотека
 
-`gfx.lib` не входит в основную `sprinter.lib` и линкуется только явно. Библиотека рассчитана на режим `320x256x256` и предоставляет общий слой для спрайтов, blit-операций, восстановления фона и будущих графических примитивов.
+`gfx.lib` не входит в основную `sprinter.lib` и линкуется только явно. Библиотека рассчитана на режим `320x256x256` и предоставляет общий слой для спрайтов, blit-операций, восстановления фона и графических примитивов.
 
 ```c
 #include <sprinter/gfx.h>
@@ -420,6 +420,18 @@ void video_safe_porty(void);
 void gfx_draw_sprite8(u8 screen, u16 x, u8 y, const void *data, u8 flags);
 void gfx_draw_sprite16(u8 screen, u16 x, u8 y, const void *data, u8 flags);
 void gfx_draw_sprite24(u8 screen, u16 x, u8 y, const void *data, u8 flags);
+
+void gfx_draw_pixel(u8 screen, u16 x, u8 y, u8 color, u8 flags);
+void gfx_draw_hline(u8 screen, u16 x, u8 y, u16 width, u8 color, u8 flags);
+void gfx_draw_vline(u8 screen, u16 x, u8 y, u8 height, u8 color, u8 flags);
+void gfx_draw_line(u8 screen, u16 x0, u8 y0, u16 x1, u8 y1, u8 color, u8 flags);
+void gfx_draw_line_thick(u8 screen, u16 x0, u8 y0, u16 x1, u8 y1,
+                         u8 thickness, u8 color, u8 flags);
+void gfx_draw_rect(u8 screen, u16 x, u8 y, u16 width, u8 height, u8 color, u8 flags);
+void gfx_draw_rect_thick(u8 screen, u16 x, u8 y, u16 width, u8 height,
+                         u8 thickness, u8 color, u8 flags);
+void gfx_fill_rect(u8 screen, u16 x, u8 y, u16 width, u8 height, u8 color, u8 flags);
+void gfx_draw_circle(u8 screen, u16 cx, u8 cy, u8 radius, u8 color, u8 flags);
 
 void gfx_restore_rect(u8 screen, u16 x, u8 y, u8 width, u8 height);
 void gfx_restore_sprite8(u8 screen, u16 x, u8 y);
@@ -440,7 +452,9 @@ u8  gfx_draw_resource(u8 screen, u16 x, u8 y, u8 base_page,
 - `GFX_MASKED` -- цвет `0xFF` считается прозрачным.
 - `GFX_VRAM_ONLY` -- рисовать только в VRAM, не обновляя теневую страницу.
 
-Спрайты шириной 16 и 24 пикселя, `gfx_restore_rect()` и `gfx_copy_rect()` используют аппаратный акселератор Sprinter. Для линковки одного примера укажите `EXTRA_LIBS=$(SDK_DIR)build/gfx.lib`; из корня SDK можно собрать архив отдельно командой `make gfx`.
+Функции примитивов используют индексы текущей графической палитры и принимают те же аргументы `screen` и `flags`, что и функции спрайтов. Для `gfx_draw_vline()` и `gfx_fill_rect()` значение `height == 0` означает 256 строк, как и в существующем соглашении для полноэкранного копирования.
+
+Спрайты шириной 16 и 24 пикселя, `gfx_restore_rect()` и `gfx_copy_rect()` используют аппаратный акселератор Sprinter. Примитивы реализованы как отсечённая прямая запись в VRAM. Для линковки одного примера укажите `EXTRA_LIBS=$(SDK_DIR)build/gfx.lib`; из корня SDK можно собрать архив отдельно командой `make gfx`.
 
 ## sprinter/mouse.h -- Драйвер мыши
 

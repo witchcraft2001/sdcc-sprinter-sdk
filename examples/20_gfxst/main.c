@@ -74,12 +74,21 @@ static void show_screen0(void) {
         gfx_flip();
 }
 
+static void draw_primitives(void) {
+    gfx_draw_rect(GFX_SCREEN_0, 12, 18, 296, 220, 15, GFX_OPAQUE);
+    gfx_fill_rect(GFX_SCREEN_0, 20, 204, 80, 22, 1, GFX_OPAQUE);
+    gfx_draw_line(GFX_SCREEN_0, 18, 198, 104, 226, 8, GFX_OPAQUE);
+    gfx_draw_line_thick(GFX_SCREEN_0, 24, 226, 300, 34, 3, 4, GFX_OPAQUE);
+    gfx_draw_circle(GFX_SCREEN_0, 260, 190, 24, 14, GFX_OPAQUE);
+}
+
 void main(void) {
     video_setmode(VMODE_320);
     show_screen0();
     video_setpal_range(0, sizeof(demo_palette) / sizeof(demo_palette[0]), demo_palette);
     make_sprite24();
     clear_screens();
+    draw_primitives();
 
     gfx_draw_sprite8(GFX_SCREEN_0, 24, 30, sprite8, GFX_MASKED);
     gfx_draw_sprite16(GFX_SCREEN_0, 64, 60, sprite16, GFX_MASKED);
