@@ -11,18 +11,10 @@
 
 PREFIX      ?= /usr/local
 SDK_DIR     := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
-
-# --- Tools ---
-SDCC        ?= sdcc
-SDASZ80     ?= sdasz80
-PYTHON      ?= python3
 SJASMPLUS   ?= $(SDK_DIR)tools/bin/sjasmplus
-
-# --- SDCC flags ---
-SDCC_TARGET  = -mz80
-SDCC_OPT     = --max-allocs-per-node 5000 --opt-code-speed
-SDCC_CFLAGS  = $(SDCC_TARGET) -I$(SDK_DIR)include $(SDCC_OPT)
-SDASZ_FLAGS  = -plosgff
+include $(SDK_DIR)toolchain.mk
+SDK_CFLAGS   = $(SDCC_CFLAGS)
+SDK_CPPFLAGS = $(SDCPPFLAGS) -I$(SDK_DIR)include
 
 # --- Directories ---
 LIB_SRC_DIR  = $(SDK_DIR)lib/src
@@ -32,15 +24,32 @@ INCLUDE_DIR  = $(SDK_DIR)include
 
 # --- Source discovery (recursive, one function per file) ---
 LIB_SUBDIRS  = dss bios video mouse stdio stdlib string ctype conio dir
-LIB_C_SRCS   = $(foreach d,$(LIB_SUBDIRS),$(wildcard $(LIB_SRC_DIR)/$(d)/*.c))
-LIB_ASM_SRCS = $(LIB_DIR)/crt0.s
+LIB_WRAPPER_ASM_SRCS = $(foreach d,$(LIB_SUBDIRS),$(wildcard $(LIB_SRC_DIR)/$(d)/*.s))
+LIB_WRAPPER_ASM_BASENAMES = $(notdir $(basename $(LIB_WRAPPER_ASM_SRCS)))
+LIB_C_SRCS_ALL = $(foreach d,$(LIB_SUBDIRS),$(wildcard $(LIB_SRC_DIR)/$(d)/*.c))
+LIB_C_SRCS   = $(filter-out $(foreach b,$(LIB_WRAPPER_ASM_BASENAMES),$(LIB_SRC_DIR)/%/$(b).c),$(LIB_C_SRCS_ALL))
+LIB_ASM_SRCS = $(LIB_DIR)/crt0.s $(LIB_WRAPPER_ASM_SRCS)
+LIB_EXTRA_ASM_SRCS = \
+	$(LIB_DIR)/sdcc290_compat.s \
+	$(LIB_DIR)/sdcc290_crt0_rle.s \
+	$(LIB_DIR)/sdcc290_div.s \
+	$(LIB_DIR)/sdcc290_divsigned.s \
+	$(LIB_DIR)/sdcc290_divulong.s \
+	$(LIB_DIR)/sdcc290_mod.s \
+	$(LIB_DIR)/sdcc290_modulong.s \
+	$(LIB_DIR)/sdcc290_mul.s \
+	$(LIB_DIR)/sdcc290_shift.s
 
 # Flatten .rel names into BUILD_DIR (no subdirs in build/)
 LIB_C_RELS   = $(patsubst %.c,$(BUILD_DIR)/%.rel,$(notdir $(LIB_C_SRCS)))
+LIB_C_OBJS   = $(LIB_C_RELS:.rel=.o)
+LIB_ASM_RELS = $(patsubst %.s,$(BUILD_DIR)/%.rel,$(notdir $(LIB_ASM_SRCS) $(LIB_EXTRA_ASM_SRCS)))
+LIB_ASM_OBJS = $(LIB_ASM_RELS:.rel=.o)
 CRT0_REL     = $(BUILD_DIR)/crt0.rel
+SPRINTER_LIB = $(BUILD_DIR)/sprinter.lib
 
 # VPATH: let make find .c files in subdirectories
-VPATH = $(sort $(dir $(LIB_C_SRCS)))
+VPATH = $(sort $(dir $(LIB_C_SRCS) $(LIB_ASM_SRCS) $(LIB_EXTRA_ASM_SRCS)))
 
 # =========================================================================
 .PHONY: all lib examples clean install tools help
@@ -50,10 +59,13 @@ all: lib
 help:
 	@echo "ZX Sprinter SDCC SDK"
 	@echo ""
-	@echo "  make              Build library"
-	@echo "  make examples     Build all examples"
-	@echo "  make clean        Clean"
-	@echo "  make tools        Build sjasmplus"
+	@echo "  make                  Build library with SDCC 2.9.0"
+	@echo "  make examples         Build all examples"
+	@echo "  make clean            Clean"
+	@echo "  make tools            Build sjasmplus"
+	@echo "  make SDCC_OPT=...     Override optimization profile"
+	@echo "  make SDCC290_BIN_DIR=/path/to/sdcc-2.9.0/bin"
+	@echo "                        Use a specific SDCC 2.9.0 toolchain directory"
 
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
@@ -61,23 +73,31 @@ $(BUILD_DIR):
 # --- CRT0 ---
 $(CRT0_REL): $(LIB_DIR)/crt0.s | $(BUILD_DIR)
 	$(SDASZ80) $(SDASZ_FLAGS) $(CRT0_REL) $<
+	cp $(CRT0_REL) $(basename $(CRT0_REL)).o
+
+$(BUILD_DIR)/%.rel: %.s | $(BUILD_DIR)
+	$(SDASZ80) $(SDASZ_FLAGS) $@ $<
+	cp $@ $(basename $@).o
 
 # --- Library .c → .rel (VPATH finds sources in subdirs) ---
 $(BUILD_DIR)/%.rel: %.c | $(BUILD_DIR)
-	$(SDCC) $(SDCC_CFLAGS) -c -o $@ $<
+	$(SDCPP) $(SDK_CPPFLAGS) $< > $(basename $@).i
+	$(SDCC) $(SDK_CFLAGS) --c1mode -o $(basename $@).asm < $(basename $@).i
+	$(SDASZ80) $(SDASZ_FLAGS) $@ $(basename $@).asm
+	cp $@ $(basename $@).o
 
 # --- Library archive (for selective linking) ---
-SPRINTER_LIB = $(BUILD_DIR)/sprinter.lib
+SPRINTER_LIB_INPUTS = $(LIB_C_OBJS) $(LIB_ASM_OBJS)
 
-$(SPRINTER_LIB): $(LIB_C_RELS)
-	sdar rc $@ $^
+$(SPRINTER_LIB): $(LIB_C_RELS) $(LIB_ASM_RELS)
+	$(SDAR) r $@ $(SPRINTER_LIB_INPUTS)
 
 # --- Build library ---
 lib: $(CRT0_REL) $(SPRINTER_LIB)
 	@echo ""
 	@echo "=== SDK Library Built ==="
 	@echo "CRT0: $(CRT0_REL)"
-	@echo "Library: $(SPRINTER_LIB) ($(words $(LIB_C_RELS)) modules)"
+	@echo "Library: $(SPRINTER_LIB) ($(shell expr $(words $(LIB_C_RELS)) + $(words $(LIB_ASM_RELS))) modules)"
 
 # --- Build all examples ---
 examples: lib

@@ -6,7 +6,7 @@ You need three tools to build the SDK and compile programs:
 
 | Tool | Version | Purpose |
 |------|---------|---------|
-| **SDCC** | 4.x | C compiler, assembler, linker, library archiver |
+| **SDCC** | 2.9.0 | C compiler, assembler, linker, library archiver |
 | **Python** | 3.x | `ihx2exe.py` converter (Intel HEX to Sprinter EXE) |
 | **GNU Make** | 3.8+ | Build system |
 
@@ -15,7 +15,7 @@ You need three tools to build the SDK and compile programs:
 Install via Homebrew:
 
 ```bash
-brew install sdcc python3
+brew install python3
 ```
 
 GNU Make is included with Xcode Command Line Tools:
@@ -29,19 +29,19 @@ xcode-select --install
 **Ubuntu / Debian:**
 
 ```bash
-sudo apt install sdcc python3 make
+sudo apt install python3 make
 ```
 
 **Fedora / RHEL:**
 
 ```bash
-sudo dnf install sdcc python3 make
+sudo dnf install python3 make
 ```
 
 **Arch Linux:**
 
 ```bash
-sudo pacman -S sdcc python3 make
+sudo pacman -S python3 make
 ```
 
 ## Windows
@@ -53,7 +53,7 @@ sudo pacman -S sdcc python3 make
 3. Install packages:
 
 ```bash
-pacman -S mingw-w64-x86_64-sdcc mingw-w64-x86_64-python3 make
+pacman -S mingw-w64-x86_64-python3 make
 ```
 
 4. Use the MSYS2 MinGW64 terminal for all SDK commands.
@@ -61,7 +61,9 @@ pacman -S mingw-w64-x86_64-sdcc mingw-w64-x86_64-python3 make
 ### Method 2: Manual Installation
 
 1. Download and install [Python 3.x](https://www.python.org/downloads/). During installation, check **"Add Python to PATH"**.
-2. Download and install [SDCC](https://sdcc.sourceforge.net/) using the Windows installer. Make sure it is added to PATH.
+2. Install the SDCC 2.9.0 toolchain.
+   The recommended setup is to point the SDK at the original SDCC 2.9.0 `bin` directory.
+   That directory should contain `sdcc` or `sdcc-2.9.0`, `sdcpp-2.9.0`, and either the upstream tool names `as-z80-2.9.0`, `sdcclib-2.9.0`, `link-z80-2.9.0` or repackaged equivalents `sdasz80`, `sdar`, `sdldz80`.
 3. Install [GNU Make](https://gnuwin32.sourceforge.net/packages/make.htm), or use Make from Git Bash / MSYS2.
 
 ## Verifying Installation
@@ -69,14 +71,13 @@ pacman -S mingw-w64-x86_64-sdcc mingw-w64-x86_64-python3 make
 Run these commands to confirm everything is installed:
 
 ```bash
-sdcc --version
-```
-
-Expected output: `SDCC : mcs51/z80/... 4.x.x ...`
-
-```bash
+/absolute/path/to/sdcc-2.9.0/bin/sdcc --version
 python3 --version
 ```
+
+Expected output for the compiler: `SDCC : mcs51/z80/... 2.9.0 ...`
+
+If the compiler binary is named `sdcc-2.9.0`, use that full path instead.
 
 Expected output: `Python 3.x.x`
 
@@ -102,13 +103,36 @@ This compiles all library modules and creates:
 - `build/crt0.rel` -- C runtime startup object
 - `build/sprinter.lib` -- library archive (~103 modules, selective linking)
 
+If several SDCC versions are installed on the same machine, pin this SDK to the exact 2.9.0 toolchain directory:
+
+```bash
+make SDCC290_BIN_DIR=/absolute/path/to/sdcc-2.9.0/bin
+make examples SDCC290_BIN_DIR=/absolute/path/to/sdcc-2.9.0/bin
+```
+
+You can also create `config.local.mk` from `config.local.mk.example` and store the path there:
+
+```makefile
+SDCC290_BIN_DIR := /absolute/path/to/sdcc-2.9.0/bin
+```
+
+If you prefer not to use `SDCC290_BIN_DIR`, define the tool paths explicitly:
+
+```makefile
+SDCC    := /absolute/path/to/sdcc-2.9.0/bin/sdcc
+SDCPP   := /absolute/path/to/sdcc-2.9.0/bin/sdcpp-2.9.0
+SDASZ80 := /absolute/path/to/sdcc-2.9.0/bin/as-z80-2.9.0
+SDAR    := /absolute/path/to/sdcc-2.9.0/bin/sdcclib-2.9.0
+SDLDZ80 := /absolute/path/to/sdcc-2.9.0/bin/link-z80-2.9.0
+```
+
 ## Building the Examples
 
 ```bash
 make examples
 ```
 
-This builds all 15 example programs. Each example produces an `.exe` file in its directory (e.g., `examples/01_hello/hello.exe`).
+This builds all 19 example programs. Each example produces an `.exe` file in its directory (e.g., `examples/01_hello/hello.exe`).
 
 ## Building sjasmplus (optional)
 
@@ -162,9 +186,9 @@ sdcc-sprinter-sdk/
 │   ├── ihx2exe.py           # Intel HEX → Sprinter EXE converter
 │   ├── install-sdcc.sh      # SDCC installer helper
 │   └── build-sjasmplus.sh   # sjasmplus build script
-├── examples/                # 15 example programs
+├── examples/                # 19 example programs
 │   ├── common.mk            # Shared Makefile rules
-│   ├── 01_hello/ .. 15_exec/
+│   ├── 01_hello/ .. 19_console/
 ├── scripts/
 │   ├── copy_exe.sh          # Copy EXE files to target directory
 │   └── make_floppy.sh       # Create FAT12 floppy image

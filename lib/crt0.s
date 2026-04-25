@@ -38,6 +38,7 @@ _entry::
         call    _main
 
         ; main() returned — exit with return code in L
+        ld      a, l
         ld      b, l
         ld      c, #0x41        ; DSS.Exit
         rst     #0x10

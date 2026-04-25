@@ -8,13 +8,13 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SDK_DIR="$(dirname "$SCRIPT_DIR")"
 
-# Check for local sjasmplus source
-SJASMPLUS_SRC="${SJASMPLUS_SRC:-/Users/dmitry/dev/zx/sjasmplus}"
+# Source tree can be provided explicitly via SJASMPLUS_SRC.
+# If it is not set, use a repository-local checkout under build/.
+SJASMPLUS_SRC="${SJASMPLUS_SRC:-$SDK_DIR/build/sjasmplus-src}"
 
 if [ ! -d "$SJASMPLUS_SRC" ]; then
     echo "sjasmplus source not found at $SJASMPLUS_SRC"
     echo "Cloning from GitHub..."
-    SJASMPLUS_SRC="$SDK_DIR/build/sjasmplus-src"
     mkdir -p "$SDK_DIR/build"
     git clone --recursive https://github.com/z00m128/sjasmplus.git "$SJASMPLUS_SRC"
 fi

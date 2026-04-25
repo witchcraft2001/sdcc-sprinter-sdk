@@ -300,7 +300,7 @@ The `ff_name` field is compatible -- it contains the null-terminated filename.
 
 ## Calling Convention Differences
 
-SOLID C passes parameters in Z80 registers (HL, DE, BC, A) in a custom convention. SDCC uses `sdcccall(1)`, which is also register-based but with different rules:
+SOLID C passes parameters in Z80 registers (HL, DE, BC, A) in a custom convention. This SDK targets SDCC 2.9.0, whose default ABI is stack-based for most C calls and differs significantly from SOLID C:
 
 - 1st parameter: `u8` in A, `u16`/pointer in HL
 - 2nd parameter: `u8` in L (if 1st in A), `u16`/pointer in DE

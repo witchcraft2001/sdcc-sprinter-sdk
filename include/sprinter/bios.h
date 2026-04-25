@@ -62,25 +62,25 @@
  *  index: color index (0-255)
  *  r, g, b: color components (0-63 each, 6-bit)
  */
-void bios_setpal(u8 index, u8 r, u8 g, u8 b);
+void bios_setpal(u8 index, u8 r, u8 g, u8 b) SPRINTER_NAKED_DECL;
 
 /** Put pixel in graphics mode.
  *  x: 0-319 (or 0-639)
  *  y: 0-255
  *  color: palette index
  */
-void bios_putpixel(u16 x, u8 y, u8 color);
+void bios_putpixel(u16 x, u8 y, u8 color) SPRINTER_NAKED_DECL;
 
 /** Get BIOS version. Returns version in BCD format */
-u16 bios_version(void);
+u16 bios_version(void) SPRINTER_NAKED_DECL;
 
 /** Get board/Sprinter type */
-u8 bios_board_id(void);
+u8 bios_board_id(void) SPRINTER_NAKED_DECL;
 
 /** Read I/O port */
-u8 inp(u16 port);
+u8 inp(u16 port) SPRINTER_NAKED_DECL;
 
 /** Write I/O port */
-void outp(u16 port, u8 value);
+void outp(u16 port, u8 value) SPRINTER_NAKED_DECL;
 
 #endif /* _SPRINTER_BIOS_H */

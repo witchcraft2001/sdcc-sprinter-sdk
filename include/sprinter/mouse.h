@@ -42,24 +42,24 @@ typedef struct {
 /* ===== Functions ===== */
 
 /** Initialize mouse driver. Returns 1 if mouse present, 0 if absent */
-u8 mouse_init(void);
+u8 mouse_init(void) SPRINTER_NAKED_DECL;
 
 /** Show mouse cursor */
-void mouse_show(void);
+void mouse_show(void) SPRINTER_NAKED_DECL;
 
 /** Hide mouse cursor */
-void mouse_hide(void);
+void mouse_hide(void) SPRINTER_NAKED_DECL;
 
 /** Get current mouse state */
-void mouse_stat(mouse_state_t *state);
+void mouse_stat(mouse_state_t *state) SPRINTER_NAKED_DECL;
 
 /** Set mouse cursor position */
-void mouse_setpos(u16 x, u16 y);
+void mouse_setpos(u16 x, u16 y) SPRINTER_NAKED_DECL;
 
 /** Set X coordinate boundaries */
-void mouse_xbound(u16 min_x, u16 max_x);
+void mouse_xbound(u16 min_x, u16 max_x) SPRINTER_NAKED_DECL;
 
 /** Set Y coordinate boundaries */
-void mouse_ybound(u16 min_y, u16 max_y);
+void mouse_ybound(u16 min_y, u16 max_y) SPRINTER_NAKED_DECL;
 
 #endif /* _SPRINTER_MOUSE_H */

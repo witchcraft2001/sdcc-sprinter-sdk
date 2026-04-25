@@ -9,21 +9,25 @@
 #   STACK    = 0xBFFF
 
 SDK_DIR     ?= ../../
-SDCC        ?= sdcc
-PYTHON      ?= python3
+include $(SDK_DIR)toolchain.mk
 
 # --- Memory layout defaults (32KB: WIN1+WIN2, like SOLID C) ---
 CODE_LOC    ?= 0x4100
 STACK       ?= 0xBFFF
+DATA_LOC    ?=
 
 BUILD       = _build
-SDCC_TARGET = -mz80
-SDCC_FLAGS  = $(SDCC_TARGET) --max-allocs-per-node 5000 --opt-code-speed
 INC         = -I$(SDK_DIR)include
 CRT0        = $(SDK_DIR)build/crt0.rel
 SPRLIB      = $(SDK_DIR)build/sprinter.lib
 
 APP_RELS    = $(patsubst %.c,$(BUILD)/%.rel,$(SRCS))
+APP_OBJS    = $(APP_RELS:.rel=.o)
+CRT0_LINK   = $(CRT0)
+APP_LINK    = $(APP_RELS)
+
+APP_CFLAGS   = $(SDCC_CFLAGS)
+APP_CPPFLAGS = $(SDCPPFLAGS) $(INC)
 
 .PHONY: all clean
 
@@ -33,15 +37,21 @@ $(BUILD):
 	mkdir -p $(BUILD)
 
 $(BUILD)/%.rel: %.c | $(BUILD)
-	$(SDCC) $(SDCC_FLAGS) $(INC) -c -o $@ $<
+	$(SDCPP) $(APP_CPPFLAGS) $< > $(basename $@).i
+	$(SDCC) $(APP_CFLAGS) --c1mode -o $(basename $@).asm < $(basename $@).i
+	$(SDASZ80) -plosgff $@ $(basename $@).asm
+	cp $@ $(basename $@).o
 
 $(BUILD)/$(APP).ihx: $(CRT0) $(SPRLIB) $(APP_RELS)
-	$(SDCC) $(SDCC_TARGET) --no-std-crt0 --code-loc $(CODE_LOC) \
-		--max-allocs-per-node 5000 --opt-code-speed \
-		$(INC) \
-		$(CRT0) $(APP_RELS) \
-		-l$(SPRLIB) \
-		-o $@
+	printf '%s\n' '-mjx' > $(BUILD)/$(APP).lk
+	printf '%s\n' '-i $@' >> $(BUILD)/$(APP).lk
+	printf '%s\n' '-b _CODE = $(CODE_LOC)' >> $(BUILD)/$(APP).lk
+	if [ -n "$(DATA_LOC)" ]; then printf '%s\n' '-b _DATA = $(DATA_LOC)' >> $(BUILD)/$(APP).lk; fi
+	printf '%s\n' '-l $(abspath $(SPRLIB))' >> $(BUILD)/$(APP).lk
+	printf '%s\n' '$(abspath $(CRT0_LINK))' >> $(BUILD)/$(APP).lk
+	for rel in $(APP_LINK); do printf '%s\n' "$$rel" >> $(BUILD)/$(APP).lk; done
+	printf '%s\n' '-e' >> $(BUILD)/$(APP).lk
+	$(SDLDZ80) -n -f $(BUILD)/$(APP).lk
 
 $(APP).exe: $(BUILD)/$(APP).ihx
 	$(PYTHON) $(SDK_DIR)tools/ihx2exe.py $< $@ --load $(CODE_LOC) --entry $(CODE_LOC) --stack $(STACK)

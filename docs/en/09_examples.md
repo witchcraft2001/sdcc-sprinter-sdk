@@ -1,6 +1,6 @@
 # Examples
 
-The SDK includes 15 example programs demonstrating various SDK features. All examples are in the `examples/` directory, each with its own `main.c` and `Makefile`.
+The SDK includes 19 example programs demonstrating various SDK features. All examples are in the `examples/` directory, each with its own `main.c` and `Makefile`.
 
 ## Building Examples
 
@@ -167,12 +167,36 @@ void main(void) {
 
 **Demonstrates:** `dss_exec_ex()`, DSS `EXEC` error handling, interpreting child exit status.
 
+### 16_appinfo -- APPINFO and Path Parsing
+
+Reads `APPINFO` fields for the running program, shows `getcwd()`, and splits the executable path with both `fnsplit()` and `dss_expath()`.
+
+**Demonstrates:** `dss_appinfo()`, `dss_expath()`, `getcwd()`, `fnsplit()`.
+
+### 17_envdir -- Environment and Directory Operations
+
+Creates and removes a temporary directory, changes into it and back, and sets/reads/deletes an environment variable.
+
+**Demonstrates:** `putenv()`, `getenv()`, `mkdir()`, `chdir()`, `rmdir()`, `getcwd()`.
+
+### 18_call -- CALL and CALLP
+
+Calls local C functions indirectly through `dss_call()` and `dss_callp()` and prints the returned values.
+
+**Demonstrates:** `dss_call()`, `dss_callp()`, calling plain C functions through DSS trampolines.
+
+### 19_console -- Console Window and Video State
+
+Reads the current DSS video mode/page, reapplies the same mode, clears a text window and scrolls it.
+
+**Demonstrates:** `dss_getvmod()`, `dss_setvmod()`, `dss_clear()`, `dss_scroll()`, `dss_gotoxy()`.
+
 ## Creating Your Own Example
 
 1. Create a new directory:
 
 ```bash
-mkdir examples/16_myproject
+mkdir examples/20_myproject
 ```
 
 2. Create `main.c`:
@@ -197,7 +221,7 @@ include ../common.mk
 4. Build:
 
 ```bash
-cd examples/16_myproject
+cd examples/20_myproject
 make
 ```
 

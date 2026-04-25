@@ -31,4 +31,6 @@ typedef signed long         i32;
 typedef unsigned char       byte;
 typedef unsigned int        word;
 
+#define SPRINTER_NAKED_DECL
+
 #endif /* _SPRINTER_TYPES_H */

@@ -34,16 +34,16 @@
 #define VRAM_ONLY           0x04    /* Write to VRAM only */
 
 /** Set graphics video mode */
-void video_setmode(u8 mode);
+void video_setmode(u8 mode) SPRINTER_NAKED_DECL;
 
 /** Get current video mode */
-u8 video_getmode(void);
+u8 video_getmode(void) SPRINTER_NAKED_DECL;
 
 /** Swap display buffers (double buffering via RGMOD port) */
-void video_swap(void);
+void video_swap(void) SPRINTER_NAKED_DECL;
 
 /** Wait for vertical sync */
-void video_vsync(void);
+void video_vsync(void) SPRINTER_NAKED_DECL;
 
 /** Set palette entry.
  *  index: color index
@@ -55,11 +55,11 @@ void video_setpal(u8 index, u8 r, u8 g, u8 b);
  *  win: memory window (0-3)
  *  page: VRAM page number (0x50-0x5F)
  */
-void video_mapvram(u8 win, u8 page);
+void video_mapvram(u8 win, u8 page) SPRINTER_NAKED_DECL;
 
 /** Reset PORT_Y to safe zone (0xC0).
  *  MUST be called after finishing all pixel drawing to prevent
  *  VRAM corruption from code/data accesses. */
-void video_safe_porty(void);
+void video_safe_porty(void) SPRINTER_NAKED_DECL;
 
 #endif /* _SPRINTER_VIDEO_H */
