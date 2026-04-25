@@ -14,47 +14,47 @@ void main(void) {
     const char *tmpdir = "SDKTMP";
 
     dss_clrscr();
-    printf("=== ENV / DIR demo ===\n\n");
+    printf("=== ENV / DIR demo ===\r\n\r\n");
 
     if (getcwd(cwd, sizeof(cwd))) {
-        printf("Start dir: %s\n", cwd);
+        printf("Start dir: %s\r\n", cwd);
     } else {
-        printf("Start dir: <error>\n");
+        printf("Start dir: <error>\r\n");
     }
 
     rc = putenv("SDK_DEMO=");
-    printf("putenv(\"SDK_DEMO=\"): %d\n", rc);
+    printf("putenv(\"SDK_DEMO=\"): %d\r\n", rc);
 
     rc = putenv("SDK_DEMO=ZXSPRINTER");
-    printf("putenv(\"SDK_DEMO=ZXSPRINTER\"): %d\n", rc);
+    printf("putenv(\"SDK_DEMO=ZXSPRINTER\"): %d\r\n", rc);
 
     value = getenv("sdk_demo");
-    printf("getenv(\"sdk_demo\"): %s\n", value ? value : "(not found)");
+    printf("getenv(\"sdk_demo\"): %s\r\n", value ? value : "(not found)");
 
     rmdir(tmpdir);
     rc = mkdir(tmpdir);
-    printf("mkdir(\"%s\"): %d\n", tmpdir, rc);
+    printf("mkdir(\"%s\"): %d\r\n", tmpdir, rc);
 
     rc = chdir(tmpdir);
-    printf("chdir(\"%s\"): %d\n", tmpdir, rc);
+    printf("chdir(\"%s\"): %d\r\n", tmpdir, rc);
     if (rc == 0 && getcwd(cwd, sizeof(cwd))) {
-        printf("Inside dir: %s\n", cwd);
+        printf("Inside dir: %s\r\n", cwd);
     }
 
     rc = chdir("..");
-    printf("chdir(\"..\"): %d\n", rc);
+    printf("chdir(\"..\"): %d\r\n", rc);
     if (rc == 0 && getcwd(cwd, sizeof(cwd))) {
-        printf("Back dir  : %s\n", cwd);
+        printf("Back dir  : %s\r\n", cwd);
     }
 
     rc = rmdir(tmpdir);
-    printf("rmdir(\"%s\"): %d\n", tmpdir, rc);
+    printf("rmdir(\"%s\"): %d\r\n", tmpdir, rc);
 
     rc = putenv("SDK_DEMO=");
-    printf("delete SDK_DEMO: %d\n", rc);
+    printf("delete SDK_DEMO: %d\r\n", rc);
     value = getenv("SDK_DEMO");
-    printf("getenv(\"SDK_DEMO\"): %s\n", value ? value : "(still present)");
+    printf("getenv(\"SDK_DEMO\"): %s\r\n", value ? value : "(still present)");
 
-    printf("\nPress any key...\n");
+    printf("\r\nPress any key...\r\n");
     getchar();
 }

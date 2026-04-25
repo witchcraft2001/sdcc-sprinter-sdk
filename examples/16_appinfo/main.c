@@ -2,60 +2,83 @@
  * 16_appinfo -- APPINFO / EX_PATH / getcwd / fnsplit demo
  */
 
-#include <stdio.h>
+#include <string.h>
 #include <dir.h>
 #include <sprinter.h>
 
-static void show_appinfo(u8 subfunc, const char *label, char *buf) {
-    buf[0] = 0;
-    if (dss_appinfo(subfunc, buf) == 0) {
-        printf("%s: %s\n", label, buf[0] ? buf : "(empty)");
-    } else {
-        printf("%s: <error>\n", label);
-    }
+static char params[128];
+static char app_dir[128];
+static char full_path[128];
+static char cwd[128];
+static char drive[16];
+static char path[128];
+static char fname[16];
+static char ext[8];
+static char direct_name[16];
+
+static void print_hex16(u16 value) {
+    const char hex[] = "0123456789ABCDEF";
+    dss_puts("0x");
+    dss_putchar(hex[(value >> 12) & 0x0F]);
+    dss_putchar(hex[(value >> 8) & 0x0F]);
+    dss_putchar(hex[(value >> 4) & 0x0F]);
+    dss_putchar(hex[value & 0x0F]);
+}
+
+static void print_label_value(const char *label, const char *value) {
+    dss_puts(label);
+    dss_puts(": ");
+    dss_puts(value && value[0] ? value : "(empty)");
+    dss_puts("\r\n");
+}
+
+static void show_appinfo(u8 subfunc, const char *label, char *buf, u16 size) {
+    memset(buf, 0, size);
+    if (dss_appinfo(subfunc, buf) == 0)
+        print_label_value(label, buf);
+    else
+        print_label_value(label, "<error>");
 }
 
 void main(void) {
-    char params[128];
-    char app_dir[128];
-    char full_path[128];
-    char cwd[128];
-    char drive[16];
-    char path[128];
-    char fname[16];
-    char ext[8];
-    char direct_name[16];
     int flags;
 
     dss_clrscr();
-    printf("=== APPINFO / PATH demo ===\n\n");
+    dss_puts("=== APPINFO / PATH demo ===\r\n\r\n");
 
-    show_appinfo(APPINFO_PARAMS, "APPINFO params", params);
-    show_appinfo(APPINFO_DIR, "APPINFO dir", app_dir);
-    show_appinfo(APPINFO_FULL, "APPINFO full", full_path);
+    show_appinfo(APPINFO_PARAMS, "APPINFO params", params, sizeof(params));
+    show_appinfo(APPINFO_DIR, "APPINFO dir", app_dir, sizeof(app_dir));
+    show_appinfo(APPINFO_FULL, "APPINFO full", full_path, sizeof(full_path));
 
+    memset(cwd, 0, sizeof(cwd));
     if (getcwd(cwd, sizeof(cwd))) {
-        printf("getcwd(): %s\n", cwd);
+        print_label_value("getcwd()", cwd);
     } else {
-        printf("getcwd(): <error>\n");
+        print_label_value("getcwd()", "<error>");
     }
 
     if (full_path[0]) {
+        memset(drive, 0, sizeof(drive));
+        memset(path, 0, sizeof(path));
+        memset(fname, 0, sizeof(fname));
+        memset(ext, 0, sizeof(ext));
         flags = fnsplit(full_path, drive, path, fname, ext);
-        printf("\nfnsplit flags: 0x%X\n", (u16)flags);
-        printf("drive: %s\n", drive[0] ? drive : "(none)");
-        printf("path : %s\n", path[0] ? path : "(none)");
-        printf("name : %s\n", fname[0] ? fname : "(none)");
-        printf("ext  : %s\n", ext[0] ? ext : "(none)");
+        dss_puts("\r\nfnsplit flags: ");
+        print_hex16((u16)flags);
+        dss_puts("\r\n");
+        print_label_value("drive", drive);
+        print_label_value("path ", path);
+        print_label_value("name ", fname);
+        print_label_value("ext  ", ext);
 
-        direct_name[0] = 0;
+        memset(direct_name, 0, sizeof(direct_name));
         if (dss_expath(full_path, direct_name, EXPATH_NAME) == 0) {
-            printf("EXPATH name: %s\n", direct_name[0] ? direct_name : "(empty)");
+            print_label_value("EXPATH name", direct_name);
         } else {
-            printf("EXPATH name: <error>\n");
+            print_label_value("EXPATH name", "<error>");
         }
     }
 
-    printf("\nPress any key...\n");
-    getchar();
+    dss_puts("\r\nPress any key...\r\n");
+    dss_waitkey();
 }

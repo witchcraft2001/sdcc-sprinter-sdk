@@ -23,19 +23,19 @@ void main(void) {
     u16 rc3;
 
     dss_clrscr();
-    printf("=== CALL / CALLP demo ===\n\n");
+    printf("=== CALL / CALLP demo ===\r\n\r\n");
 
     rc1 = dss_call((u16)return_magic);
     rc2 = dss_callp((u16)add_0x1111, 0x2222);
     rc3 = dss_callp((u16)xor_mask, 0x55AA);
 
-    printf("dss_call(return_magic)        = 0x%X\n", rc1);
-    printf("dss_callp(add_0x1111, 0x2222) = 0x%X\n", rc2);
-    printf("dss_callp(xor_mask,   0x55AA) = 0x%X\n", rc3);
+    printf("dss_call(return_magic)        = 0x%X\r\n", rc1);
+    printf("dss_callp(add_0x1111, 0x2222) = 0x%X\r\n", rc2);
+    printf("dss_callp(xor_mask,   0x55AA) = 0x%X\r\n", rc3);
 
-    printf("\nExpected values:\n");
-    printf("0x1234, 0x3333, 0x5555\n");
+    printf("\r\nExpected values:\r\n");
+    printf("0x1234, 0x3333, 0x5555\r\n");
 
-    printf("\nPress any key...\n");
+    printf("\r\nPress any key...\r\n");
     getchar();
 }

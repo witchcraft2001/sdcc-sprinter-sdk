@@ -1,6 +1,6 @@
 # Sprinter Hardware API
 
-The Sprinter-specific API provides direct access to DSS OS calls, BIOS functions, video hardware, mouse driver, and I/O ports. These headers are independent of the standard C library and produce smaller binaries.
+The Sprinter-specific API provides direct access to DSS OS calls, BIOS functions, video hardware, the mouse driver, and low-level I/O ports. These headers are independent from the standard C library and are useful when you want smaller binaries or tighter control over the machine.
 
 Include everything at once:
 
@@ -8,7 +8,7 @@ Include everything at once:
 #include <sprinter.h>
 ```
 
-Or include individual headers as needed:
+Or include only the parts you need:
 
 ```c
 #include <sprinter/dss.h>
@@ -33,104 +33,149 @@ Fixed-width integer types for Z80/SDCC:
 | `i32` / `int32_t` | 4 bytes | -2147483648 .. 2147483647 |
 | `byte` | 1 byte | Alias for `unsigned char` |
 | `word` | 2 bytes | Alias for `unsigned int` |
-| `bool` | 1 byte | `true` (1) or `false` (0) |
+| `bool` | 1 byte | `true` or `false` |
 
-Also includes `size_t`, `NULL`, and `offsetof` from `<stddef.h>`.
+The header also provides `size_t`, `NULL`, and `offsetof` via `<stddef.h>`.
 
 ## sprinter/dss.h -- DSS OS Calls
 
-All DSS system calls go through the `RST #10` vector. The SDK wraps each call in a C function that saves/restores the IX register (DSS may clobber it).
+All DSS system calls go through `RST #10`. The SDK wraps them in C functions with an SDCC 2.9.0-compatible ABI.
 
-### Console I/O
+### Console and Keyboard
 
 ```c
-void dss_putchar(u8 ch);              /* Print character */
-void dss_puts(const char *str);        /* Print null-terminated string */
-u8   dss_waitkey(void);               /* Wait for key, return char code */
-bool dss_kbhit(void);                 /* Non-blocking key check */
-u16  dss_getche(void);                /* Get key with echo */
-void dss_gotoxy(u8 x, u8 y);         /* Set cursor position (1-based) */
-void dss_clrscr(void);                /* Clear screen */
+void dss_putchar(u8 ch);
+void dss_puts(const char *str);
+u8   dss_waitkey(void);
+void dss_waitkey_ex(dss_key_t *key);
+bool dss_scankey(dss_key_t *key);
+bool dss_testkey(dss_key_t *key);
+bool dss_kbhit(void);
+u16  dss_getche(void);
+void dss_gotoxy(u8 x, u8 y);
+void dss_clrscr(void);
 ```
 
-**Note:** `dss_puts()` outputs the string as-is. Use `\r\n` for newlines (DSS does not translate `\n`).
+- `dss_putchar(ch)` prints one character.
+- `dss_puts(str)` prints a zero-terminated string exactly as provided. Use `\r\n` for a newline; DSS does not auto-translate `\n`.
+- `dss_waitkey()` blocks until a key is pressed and returns the ASCII code.
+- `dss_waitkey_ex(key)` blocks and fills a full keyboard-event structure.
+- `dss_scankey(key)` is non-blocking; it returns `true` and consumes a key if one is waiting.
+- `dss_testkey(key)` is also non-blocking, but does not consume the buffered key.
+- `dss_kbhit()` is a fast yes/no keyboard-buffer check.
+- `dss_getche()` reads a key and echoes it through DSS.
+- `dss_gotoxy(x, y)` moves the text cursor. Coordinates are 1-based.
+- `dss_clrscr()` clears the active text screen.
+
+`dss_key_t` describes one keyboard event:
+
+```c
+typedef struct {
+    u8 ascii;
+    u8 scan;
+    u8 modifiers;
+    u8 locks;
+} dss_key_t;
+```
+
+- `ascii` is the translated character, if any.
+- `scan` is the physical/scan position code.
+- `modifiers` contains Shift/Ctrl/Alt state.
+- `locks` contains Caps/Num/Scroll/Insert/RusLat state.
+
+Useful bit masks:
+
+```c
+DSS_KEYMOD_ALT
+DSS_KEYMOD_CTRL
+DSS_KEYMOD_LSHIFT
+DSS_KEYMOD_RSHIFT
+DSS_KEYLOCK_CAPS
+DSS_KEYLOCK_NUM
+DSS_KEYLOCK_SCROLL
+DSS_KEYLOCK_RUSLAT
+```
 
 ### File I/O
 
 ```c
-i16  dss_open(const char *path, u8 mode);    /* Open file, returns fd or -1 */
-i16  dss_creat(const char *path);            /* Create file, returns fd or -1 */
-u8   dss_close(u8 fd);                       /* Close file */
-i16  dss_read(u8 fd, void *buf, u16 count);  /* Read bytes, returns count or -1 */
-i16  dss_write(u8 fd, const void *buf, u16 count);  /* Write bytes */
-i16  dss_seek(u8 fd, u32 offset, u8 origin); /* Seek: SEEK_SET/CUR/END */
-u8   dss_delete(const char *path);           /* Delete file */
-u8   dss_rename(const char *old, const char *new);  /* Rename file */
+i16  dss_open(const char *path, u8 mode);
+i16  dss_creat(const char *path);
+u8   dss_close(u8 fd);
+i16  dss_read(u8 fd, void *buf, u16 count);
+i16  dss_write(u8 fd, const void *buf, u16 count);
+i16  dss_seek(u8 fd, u32 offset, u8 origin);
+u8   dss_delete(const char *path);
+u8   dss_rename(const char *oldpath, const char *newpath);
 ```
 
-**File open modes** (combinable with OR):
+- `path` is a DSS path such as `"A:\\DIR\\FILE.TXT"` or `"FILE.TXT"`.
+- `fd` is the 8-bit DSS file descriptor returned by `dss_open()` or `dss_creat()`.
+- `buf` points to the read/write buffer.
+- `count` is the number of bytes to transfer.
+- `offset` is a 32-bit absolute or relative file offset.
+- `origin` is one of `SEEK_SET`, `SEEK_CUR`, or `SEEK_END`.
+
+Return values:
+
+- `dss_open()` / `dss_creat()` return a descriptor or `-1`.
+- `dss_read()` / `dss_write()` return the number of bytes transferred or `-1`.
+- `dss_seek()` returns `0` on success or `-1` on error.
+- `dss_delete()` / `dss_rename()` return `0` on success, or a DSS error code otherwise.
+
+Open-mode bits can be combined with OR:
 
 | Constant | Value | Description |
 |----------|-------|-------------|
 | `O_RDONLY` | 0x00 | Read only |
 | `O_WRONLY` | 0x01 | Write only |
 | `O_RDWR` | 0x02 | Read and write |
-| `O_CREAT` | 0x04 | Create if not exists |
+| `O_CREAT` | 0x04 | Create if missing |
 | `O_TRUNC` | 0x08 | Truncate to zero length |
-| `O_APPEND` | 0x10 | Append mode |
+| `O_APPEND` | 0x10 | Append at end of file |
 
-**Example:**
-
-```c
-#include <sprinter.h>
-
-void main(void) {
-    i16 fd;
-    char buf[32];
-
-    fd = dss_creat("TEST.TXT");
-    if (fd < 0) { dss_puts("Error!\r\n"); return; }
-    dss_write((u8)fd, "Hello\r\n", 7);
-    dss_close((u8)fd);
-
-    fd = dss_open("TEST.TXT", O_RDONLY);
-    if (fd >= 0) {
-        i16 n = dss_read((u8)fd, buf, 31);
-        buf[n] = 0;
-        dss_puts(buf);
-        dss_close((u8)fd);
-    }
-    dss_delete("TEST.TXT");
-}
-```
-
-### Directory Operations
+### Directories and Search
 
 ```c
 u8   dss_chdir(const char *path);
+u8   dss_curdir(char *buf);
+u8   dss_mkdir(const char *path);
+u8   dss_rmdir(const char *path);
 i8   dss_ffirst(const char *pattern, dss_find_t *result, u8 attr);
 i8   dss_fnext(dss_find_t *result);
 ```
 
-**dss_find_t structure:**
+- `dss_chdir(path)` changes the current directory.
+- `dss_curdir(buf)` writes the current directory into `buf`. DSS returns the directory path without the drive prefix.
+- `dss_mkdir(path)` creates one directory level.
+- `dss_rmdir(path)` removes an empty directory.
+- `dss_ffirst(pattern, result, attr)` starts a search such as `"*.C"` or `"*.*"`.
+- `dss_fnext(result)` continues the same search using the state already stored in `result`.
+
+`dss_find_t` stores both the search context and the matched file information:
 
 ```c
 typedef struct {
-    char     name[8];       /* Filename pattern */
-    char     ext[3];        /* Extension pattern */
-    u8       attrib;        /* Search attribute */
+    char     name[8];
+    char     ext[3];
+    u8       attrib;
     u8       reserved[10];
-    u16      time;          /* File time (DOS format) */
-    u16      date;          /* File date (DOS format) */
-    u16      cluster;       /* First cluster */
-    u16      size_lo;       /* File size, low word */
-    u16      size_hi;       /* File size, high word */
-    u8       attr;          /* Matched file attribute */
-    char     ff_name[223];  /* Matched filename (null-terminated) */
+    u16      time;
+    u16      date;
+    u16      cluster;
+    u16      size_lo;
+    u16      size_hi;
+    u8       attr;
+    char     ff_name[223];
 } dss_find_t;
 ```
 
-**File attributes:**
+- `ff_name` is the zero-terminated matched name.
+- `attr` is the matched file attribute byte.
+- `size_lo` and `size_hi` form a 32-bit file size.
+- `date` and `time` use DOS-compatible packed formats.
+
+Search attribute bits:
 
 | Constant | Value | Description |
 |----------|-------|-------------|
@@ -142,155 +187,211 @@ typedef struct {
 | `FA_DIREC` | 0x10 | Directory |
 | `FA_ARCH` | 0x20 | Archive |
 
-**Example -- directory listing:**
-
-```c
-#include <stdio.h>
-#include <sprinter/dss.h>
-
-void main(void) {
-    dss_find_t entry;
-    if (dss_ffirst("*.*", &entry, 0x20) == 0) {
-        do {
-            printf("%s\n", entry.ff_name);
-        } while (dss_fnext(&entry) == 0);
-    }
-}
-```
-
 ### Date and Time
 
 ```c
-void dss_getdate(dss_date_t *d);    /* Get system date */
-void dss_gettime(dss_time_t *t);    /* Get system time */
+void dss_getdate(dss_date_t *d);
+void dss_gettime(dss_time_t *t);
+void dss_settime(dss_date_t *d, dss_time_t *t);
 ```
 
-**Structures:**
+- `dss_getdate(d)` fills `year`, `month`, and `day`.
+- `dss_gettime(t)` fills `hour`, `minute`, `second`, and `hundredths`.
+- `dss_settime(d, t)` updates both date and time in one DSS call. Pass valid pointers for both structures.
+
+Structures:
 
 ```c
 typedef struct {
-    u16  year;
-    u8   day;
-    u8   month;
+    u16 year;
+    u8  day;
+    u8  month;
 } dss_date_t;
 
 typedef struct {
-    u8   minute;
-    u8   hour;
-    u8   hundredths;
-    u8   second;
+    u8 minute;
+    u8 hour;
+    u8 hundredths;
+    u8 second;
 } dss_time_t;
 ```
 
-### Memory Management
+### Memory Pages
 
 ```c
-void dss_setwin(u8 win, u8 page);   /* Map RAM page into window 0-3 */
-u8   dss_getmem(void);              /* Allocate page, returns page# or 0xFF */
-void dss_freemem(u8 page);          /* Free allocated page */
+void dss_setwin(u8 win, u8 page);
+u8   dss_getmem(void);
+void dss_freemem(u8 page);
+void dss_meminfo(u16 *total, u16 *free_pages);
 ```
 
-### Process Control
+- `dss_setwin(win, page)` maps a RAM page into memory window `0..3`.
+- `dss_getmem()` allocates one RAM page and returns its page number, or `0xFF` if none are available.
+- `dss_freemem(page)` returns a page to DSS.
+- `dss_meminfo(total, free_pages)` reports the total number of managed pages and how many are currently free.
+
+### Process, Path, Environment, and DSS Text Helpers
 
 ```c
-void dss_exit(u8 code);             /* Exit program */
-i16  dss_exec(const char *path);    /* Execute program, returns exit code */
-i16  dss_exec_ex(const char *path, u8 *err);  /* Execute program, keep raw DSS error */
-char *dss_cmdline(void);            /* Get saved command line pointer */
+u16  dss_version(void);
+void dss_exit(u8 code);
+i16  dss_exec(const char *path);
+i16  dss_exec_ex(const char *path, u8 *err);
+u8   dss_wait(void);
+char *dss_cmdline(void);
+u16  dss_call(u16 addr);
+u16  dss_callp(u16 addr, u16 param);
+i8   dss_expath(const char *path, char *buf, u8 subfunc);
+i8   dss_appinfo(u8 subfunc, char *buf);
+i8   dss_getenv(const char *name, char *buf);
+i8   dss_setenv(const char *namevalue);
+u8   dss_getdisk(void);
+void dss_setdisk(u8 disk);
+void dss_ei(void);
+void dss_di(void);
+u8   dss_setvmod(u8 mode, u8 page);
+void dss_getvmod(u8 *mode, u8 *page);
+void dss_scroll(u8 x, u8 y, u8 w, u8 h, u8 dir, u8 count);
+void dss_clear(u8 x, u8 y, u8 w, u8 h, u8 color, u8 attr);
 ```
 
-`dss_exec()` preserves compatibility with existing code: it returns child exit code on success, or `-1` on launch error.
+- `dss_version()` returns the DSS version packed as `(major << 8) | minor`.
+- `dss_exit(code)` terminates the current program and reports `code` to DSS.
+- `dss_exec(path)` runs another program and returns its exit code, or `-1` if DSS could not start it.
+- `dss_exec_ex(path, err)` is the same, but on launch failure it stores the raw DSS error code in `*err`.
+- `dss_wait()` returns DSS `ERLEVEL`, which is the last child exit code recorded by DSS.
+- `dss_cmdline()` returns a pointer to the saved command tail of the current process. Copy it if you need to keep it.
+- `dss_call(addr)` calls machine code at `addr` and returns whatever that routine leaves in `HL`.
+- `dss_callp(addr, param)` does the same, but pushes one 16-bit parameter for the callee.
+- `dss_expath(path, buf, subfunc)` extracts one path component into `buf`.
+- `dss_appinfo(subfunc, buf)` returns program metadata such as the original command tail or executable path.
+- `dss_getenv(name, buf)` reads an environment variable into `buf`.
+- `dss_setenv("NAME=VALUE")` sets or updates one environment variable.
+- `dss_getdisk()` returns the current drive number (`0 = A:`, `1 = B:`, `2 = C:`...).
+- `dss_setdisk(disk)` switches the current drive.
+- `dss_ei()` / `dss_di()` enable or disable interrupts.
+- `dss_setvmod(mode, page)` switches the DSS text/video mode and active page.
+- `dss_getvmod(mode, page)` reads the current DSS mode and page.
+- `dss_scroll(x, y, w, h, dir, count)` scrolls a rectangular text region.
+- `dss_clear(x, y, w, h, color, attr)` clears a rectangular text region.
 
-Use `dss_exec_ex()` when you need the exact DSS error code returned in register `A` on failure:
+Path helper subfunctions:
+
+| Constant | Meaning |
+|----------|---------|
+| `EXPATH_ALL` | Entire normalized path |
+| `EXPATH_DRIVE` | Drive only, for example `C:` |
+| `EXPATH_PATH` | Directory part |
+| `EXPATH_NAME` | File name without extension |
+| `EXPATH_EXT` | Extension without dot |
+
+App-info subfunctions:
+
+| Constant | Meaning |
+|----------|---------|
+| `APPINFO_PARAMS` | Command-line parameters only |
+| `APPINFO_DIR` | Directory that contains the current executable |
+| `APPINFO_FULL` | Full path of the current executable |
+
+Scroll directions:
+
+| Constant | Meaning |
+|----------|---------|
+| `SCROLL_UP` | Scroll region upward |
+| `SCROLL_DOWN` | Scroll region downward |
+
+`dss_clear()` note: the public prototype keeps the historical names `(color, attr)`, but the current DSS wrapper passes the fifth argument as the text attribute byte and the sixth as the fill character. In practice, calls look like `dss_clear(4, 8, 34, 6, 0x1F, ' ')`.
+
+## dir.h -- DOS/Turbo C Compatibility Helpers
+
+`<dir.h>` provides thin wrappers and aliases on top of the DSS API:
 
 ```c
-#include <stdio.h>
-#include <sprinter.h>
-
-void main(void) {
-    u8 err;
-    i16 rc = dss_exec_ex("CHILD.EXE arg1", &err);
-
-    if (rc < 0) {
-        printf("EXEC failed, DSS error A=0x%X (%u)\n", (u16)err, (u16)err);
-    } else {
-        printf("Child exit code: %d\n", rc);
-    }
-}
+char *getcwd(char *buf, int size);
+int   fnsplit(const char *path, char *drive, char *dir, char *fname, char *ext);
 ```
 
-### System
+- `getcwd(buf, size)` fills `buf` with the current directory and returns `buf` on success, or `NULL` on error. The current implementation ignores `size`, so provide a buffer large enough for the path.
+- `fnsplit(path, drive, dir, fname, ext)` splits a path into separate components and returns a bitmask of present parts.
+
+`fnsplit()` flags:
+
+| Constant | Meaning |
+|----------|---------|
+| `DRIVE` | Drive part was found |
+| `DIRECTORY` | Directory part was found |
+| `FILENAME` | File name part was found |
+| `EXTENSION` | Extension part was found |
+| `WILDCARDS` | Reserved for DOS/Turbo C compatibility |
+
+The same header also aliases `chdir`, `mkdir`, `rmdir`, `findfirst`, `findnext`, `ffirst`, and `fnext` to the DSS-backed implementations.
+
+## stdlib.h -- Environment Helpers
+
+The SDK standard library also exposes DSS-backed environment helpers:
 
 ```c
-u8   dss_getdisk(void);             /* Get current disk (0=A, 1=B, ...) */
-void dss_setdisk(u8 disk);          /* Set current disk */
-void dss_ei(void);                  /* Enable interrupts */
-void dss_di(void);                  /* Disable interrupts */
+char *getenv(const char *name);
+int   putenv(const char *namevalue);
 ```
+
+- `getenv(name)` returns a pointer to an internal static buffer on success, or `NULL` if the variable does not exist.
+- `putenv("NAME=VALUE")` forwards to `dss_setenv()` and returns `0` on success.
 
 ## sprinter/bios.h -- BIOS Calls
 
-BIOS calls go through the `RST #08` vector and provide low-level hardware access.
-
-### Graphics
+BIOS calls go through `RST #08` and provide lower-level hardware access than DSS.
 
 ```c
 void bios_setpal(u8 index, u8 r, u8 g, u8 b);
-```
-
-Set a single palette entry. `index` is 0-255. Color components `r`, `g`, `b` are 0-63 each (6-bit color).
-
-```c
 void bios_putpixel(u16 x, u8 y, u8 color);
+u16  bios_version(void);
+u8   bios_board_id(void);
+u8   inp(u16 port);
+void outp(u16 port, u8 value);
 ```
 
-Draw a pixel in graphics mode. `x` is 0-319 (in 320x256 mode), `y` is 0-255, `color` is the palette index.
+- `bios_setpal(index, r, g, b)` updates one palette entry. `index` is `0..255`; each color component is `0..63`.
+- `bios_putpixel(x, y, color)` writes one pixel in graphics mode.
+- `bios_version()` returns the BIOS version in BCD form.
+- `bios_board_id()` returns the board or Sprinter type identifier.
+- `inp(port)` and `outp(port, value)` wrap the Z80 `IN` and `OUT` instructions.
 
-**Important:** after drawing pixels, call `video_safe_porty()` to reset the PORT_Y register. See [Graphics Guide](06_graphics_guide.md) for details.
-
-### System Information
-
-```c
-u16 bios_version(void);    /* Returns version in BCD (e.g., 0x0102 = v1.02) */
-u8  bios_board_id(void);   /* Returns board/Sprinter type identifier */
-```
-
-### Port I/O
-
-```c
-u8   inp(u16 port);              /* Read from I/O port */
-void outp(u16 port, u8 value);   /* Write to I/O port */
-```
-
-These wrap the Z80 `IN` and `OUT` instructions. Use with port constants from `<sprinter/ports.h>`.
+`bios_putpixel()` leaves the hardware VRAM row selector active. After direct pixel plotting, call `video_safe_porty()` before doing normal memory accesses again.
 
 ## sprinter/video.h -- Video Modes
 
-### Video Mode Constants
+### Mode Constants
 
 | Constant | Value | Description |
 |----------|-------|-------------|
 | `VMODE_TEXT40` | 0x02 | Text 40x32 |
 | `VMODE_TEXT80` | 0x03 | Text 80x32 |
 | `VMODE_ZX` | 0x03 | Alias for `VMODE_TEXT80` |
-| `VMODE_320_16` | 0x80 | 320x256, 16 colors (4bpp) |
-| `VMODE_320` | 0x81 | 320x256, 256 colors (8bpp) |
+| `VMODE_320_16` | 0x80 | 320x256, 16 colors |
+| `VMODE_320` | 0x81 | 320x256, 256 colors |
 | `VMODE_640_16` | 0x82 | 640x256, 16 colors |
 | `VMODE_640` | 0x82 | Alias for `VMODE_640_16` |
 
 ### Functions
 
 ```c
-void video_setmode(u8 mode);     /* Set video mode */
-u8   video_getmode(void);        /* Get current video mode */
-void video_swap(void);           /* Swap double buffer (via RGMOD port) */
-void video_vsync(void);          /* Wait for vertical sync */
-void video_setpal(u8 index, u8 r, u8 g, u8 b);  /* Set palette (0-255 per component) */
-void video_mapvram(u8 win, u8 page);  /* Map VRAM page into memory window */
-void video_safe_porty(void);     /* Reset PORT_Y to safe zone */
+void video_setmode(u8 mode);
+u8   video_getmode(void);
+void video_swap(void);
+void video_vsync(void);
+void video_setpal(u8 index, u8 r, u8 g, u8 b);
+void video_mapvram(u8 win, u8 page);
+void video_safe_porty(void);
 ```
 
-**Critical:** `video_safe_porty()` must be called after finishing all pixel drawing operations. See [Graphics Guide](06_graphics_guide.md).
+- `video_setmode(mode)` switches the hardware video mode directly.
+- `video_getmode()` returns the current hardware mode byte.
+- `video_swap()` flips display pages for double buffering.
+- `video_vsync()` waits for the next vertical retrace.
+- `video_setpal(index, r, g, b)` sets one palette entry using 8-bit RGB values (`0..255` each).
+- `video_mapvram(win, page)` maps a VRAM page into memory window `0..3`. VRAM pages typically start at `0x50`.
+- `video_safe_porty()` restores `PORT_Y` to a safe value after raw pixel access.
 
 ### Screen Size Constants
 
@@ -305,31 +406,35 @@ void video_safe_porty(void);     /* Reset PORT_Y to safe zone */
 
 ## sprinter/mouse.h -- Mouse Driver
 
-The mouse driver is accessed through the `RST #30` vector.
-
-### Functions
+The mouse driver is accessed through `RST #30`.
 
 ```c
-u8   mouse_init(void);                     /* Init driver, returns 1 if present */
-void mouse_show(void);                     /* Show cursor */
-void mouse_hide(void);                     /* Hide cursor */
-void mouse_stat(mouse_state_t *state);     /* Get position and buttons */
-void mouse_setpos(u16 x, u16 y);          /* Set cursor position */
-void mouse_xbound(u16 min_x, u16 max_x);  /* Set X boundaries */
-void mouse_ybound(u16 min_y, u16 max_y);  /* Set Y boundaries */
+u8   mouse_init(void);
+void mouse_show(void);
+void mouse_hide(void);
+void mouse_stat(mouse_state_t *state);
+void mouse_setpos(u16 x, u16 y);
+void mouse_xbound(u16 min_x, u16 max_x);
+void mouse_ybound(u16 min_y, u16 max_y);
 ```
 
-### mouse_state_t Structure
+- `mouse_init()` returns `1` if the driver and hardware are present, otherwise `0`.
+- `mouse_show()` / `mouse_hide()` control the DSS mouse cursor.
+- `mouse_stat(state)` fills the structure with button state and coordinates.
+- `mouse_setpos(x, y)` moves the cursor.
+- `mouse_xbound(min_x, max_x)` and `mouse_ybound(min_y, max_y)` clamp motion to a region.
+
+`mouse_state_t`:
 
 ```c
 typedef struct {
-    u8   buttons;    /* Button state bitmask */
-    u16  x;          /* X position */
-    u16  y;          /* Y position */
+    u8  buttons;
+    u16 x;
+    u16 y;
 } mouse_state_t;
 ```
 
-### Button Masks
+Button masks:
 
 ```c
 #define MS_BTN_LEFT     0x01
@@ -337,35 +442,9 @@ typedef struct {
 #define MS_BTN_MIDDLE   0x04
 ```
 
-**Example:**
-
-```c
-#include <sprinter.h>
-
-void main(void) {
-    mouse_state_t ms;
-
-    if (!mouse_init()) {
-        dss_puts("No mouse!\r\n");
-        return;
-    }
-
-    mouse_xbound(0, 319);
-    mouse_ybound(0, 255);
-    mouse_show();
-
-    while (1) {
-        mouse_stat(&ms);
-        if (ms.buttons & MS_BTN_RIGHT) break;
-    }
-
-    mouse_hide();
-}
-```
-
 ## sprinter/ports.h -- Hardware Port Definitions
 
-Constants for direct I/O port access with `inp()` / `outp()`:
+Port constants for direct use with `inp()` and `outp()`:
 
 ### Memory Window Selectors
 
@@ -381,7 +460,7 @@ Constants for direct I/O port access with `inp()` / `outp()`:
 | Constant | Port | Description |
 |----------|------|-------------|
 | `PORT_GFXMODE` | 0xC3 | Graphics mode register |
-| `PORT_RGMOD` | 0xC9 | Double buffer / screen control |
+| `PORT_RGMOD` | 0xC9 | Display page / double-buffer control |
 | `PORT_PAL_ADDR` | 0x89 | Palette address |
 | `PORT_PAL_DATA` | 0x89 | Palette data |
 
@@ -398,10 +477,10 @@ Constants for direct I/O port access with `inp()` / `outp()`:
 
 | Constant | Port | Description |
 |----------|------|-------------|
-| `PORT_KEYB` | 0xFE | ZX keyboard + border |
+| `PORT_KEYB` | 0xFE | ZX keyboard and border |
 | `PORT_KEMPSTON` | 0x1F | Kempston joystick |
 | `PORT_MOUSE_BTN` | 0x58 | Mouse buttons |
 | `PORT_CTC0`..`PORT_CTC3` | 0x10-0x13 | CTC timer channels |
 | `PORT_SIO_A_DATA` | 0x18 | PS/2 data |
 | `PORT_SIO_A_CMD` | 0x19 | PS/2 command |
-| `VRAM_PAGE_BASE` | 0x50 | Base VRAM page number |
+| `VRAM_PAGE_BASE` | 0x50 | First VRAM page number |
