@@ -29,7 +29,7 @@ SDK включает 25 готовых примеров, демонстриру�
 | 21 | `21_gfx_resources` | ~3 КБ + `.gfx` | PNG -> `.gfx` ресурсы, загрузка в страничную память, палитра и вывод по ID |
 | 22 | `22_balls` | ~7 КБ + `.gfx` | Анимация шариков поверх загружаемого BMP-фона, прозрачность и double buffering |
 | 23 | `23_fesync` | ~1 КБ | Диагностика бита `#FE.5`/CBL sync для реального Sprinter и MAME |
-| 24 | `24_ppong` | ~9 КБ + `.gfx` | Мини-игра Pong: фон, спрайты, bitmap font 16x16, cursor up/down, ESC |
+| 24 | `24_ppong` | ~9 КБ + `.gfx` + `.pt3` | Мини-игра Pong: фон, спрайты, bitmap font 16x16, AY/PT3 музыка, cursor up/down, ESC |
 | 25 | `25_gfxblit` | ~4 КБ | Проверка `gfx_blit_rect`, `gfx_scroll_rect`, `gfx_copy_rect` и восстановления из DRAM-зеркала |
 
 ## Сборка и запуск
@@ -248,7 +248,7 @@ void main(void) {
 
 ### 24_ppong -- Мини-игра Pong
 
-Игровой пример Pong: загружаемый фон 320x256, 16x16-спрайт мяча, составные спрайты ракеток, bitmap font 16x16, double buffering, управление cursor up/down и выход по ESC.
+Игровой пример Pong: загружаемый фон 320x256, 16x16-спрайт мяча, составные спрайты ракеток, bitmap font 16x16, double buffering, AY/PT3 музыка из локального ресурса примера, управление cursor up/down и выход по ESC. При выходе музыка глушится через `ay_pt3_mute()`, затем освобождаются DSS-блоки графики и музыки.
 
 ### 25_gfxblit -- Проверка ускоренного blit/scroll
 

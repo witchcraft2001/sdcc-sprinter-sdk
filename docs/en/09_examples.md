@@ -215,9 +215,9 @@ Demonstrates masked 16x16 sprites, a loaded bitmap background, DRAM-mirror resto
 
 Diagnostic DSS EXE for checking the Sprinter `#FE.5`/CBL sync bit on real hardware and in MAME.
 
-### 24_ppong -- Pong Mini-Game (~9 KB + `.gfx`)
+### 24_ppong -- Pong Mini-Game (~9 KB + `.gfx` + `.pt3`)
 
-Human-vs-computer Pong-style demo using a loaded 320x256 background, 16x16 ball sprite, segmented paddle sprites, 16x16 bitmap font resources, double buffering, cursor up/down controls, and ESC to exit.
+Human-vs-computer Pong-style demo using a loaded 320x256 background, 16x16 ball sprite, segmented paddle sprites, 16x16 bitmap font resources, double buffering, AY/PT3 music from the example's local resource, cursor up/down controls, and ESC to exit. On exit it mutes music through `ay_pt3_mute()`, then frees both graphics and music DSS blocks.
 
 ### 25_gfxblit -- Accelerated Blit/Scroll Test (~4 KB)
 

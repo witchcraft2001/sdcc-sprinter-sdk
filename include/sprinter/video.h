@@ -62,7 +62,7 @@ void video_sync_enable(void) SPRINTER_NAKED_DECL;
 /** Disable the hardware sync source used by video_vsync() */
 void video_sync_disable(void) SPRINTER_NAKED_DECL;
 
-/** Wait for vertical sync using Sprinter CBL/#FFFE bit 5 when available */
+/** Wait for the start of a frame using Sprinter CBL/#FFFE bit 5 when available */
 void video_vsync(void) SPRINTER_NAKED_DECL;
 
 /** Set palette entry.

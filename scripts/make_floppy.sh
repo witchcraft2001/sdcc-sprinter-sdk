@@ -52,6 +52,15 @@ for res in "$SDK_DIR"/examples/*/*.gfx; do
     echo "  $name"
 done
 
+# Copy example music resources
+for res in "$SDK_DIR"/examples/*/*.pt3; do
+    [ -f "$res" ] || continue
+    check_83 "$res"
+    name=$(basename "$res" | tr '[:lower:]' '[:upper:]')
+    mcopy -i "$OUTPUT" "$res" "::$name"
+    echo "  $name"
+done
+
 echo ""
 echo "Floppy image: $OUTPUT"
 mdir -i "$OUTPUT" ::

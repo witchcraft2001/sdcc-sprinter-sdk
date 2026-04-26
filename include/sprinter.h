@@ -13,5 +13,6 @@
 #include <sprinter/bios.h>
 #include <sprinter/video.h>
 #include <sprinter/mouse.h>
+#include <sprinter/ay.h>
 
 #endif /* _SPRINTER_H */

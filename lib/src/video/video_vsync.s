@@ -5,7 +5,8 @@
 
 _video_vsync::
         ; Sprinter exposes display sync on #FFFE bit 5 only when CBL is active.
-        ; Wait for a low->high edge: visible area first, then vertical blank.
+        ; #FE.5 is 1 while Y > 256 (bottom blank/border) and 0 for Y < 256.
+        ; Wait for the high->low edge so callers resume at the start of a frame.
         ld      bc,#0x004e
         ld      a,#0x80
         out     (c),a
@@ -15,7 +16,7 @@ _video_vsync::
         ld      a,#0xff
         in      a,(#0xfe)
         bit     5,a
-        jr      z,2$
+        jr      nz,2$
         dec     de
         ld      a,d
         or      e
@@ -28,7 +29,7 @@ _video_vsync::
         ld      a,#0xff
         in      a,(#0xfe)
         bit     5,a
-        ret     nz
+        ret     z
         dec     de
         ld      a,d
         or      e

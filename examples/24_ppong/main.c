@@ -19,6 +19,11 @@
 #define SCORE_Y         8
 #define KEY_SCAN_UP     0x58
 #define KEY_SCAN_DOWN   0x52
+#define MUSIC_PAGE_COUNT 1
+#define BORDER_BLACK    0
+#define BORDER_BLUE     1
+#define BORDER_PLAYER   2
+#define BORDER_AFTER    6
 
 static const char font_chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789:-. ";
 
@@ -46,6 +51,10 @@ typedef struct draw_state {
 static void show_screen0(void) {
     if (gfx_get_active_screen() != GFX_SCREEN_0)
         gfx_flip();
+}
+
+static void debug_border(u8 color) {
+    outp(PORT_KEYB, color & 7);
 }
 
 static u8 font_id(char ch) {
@@ -88,17 +97,15 @@ static void draw_score(u8 screen, u8 page, const game_state_t *g) {
 
 static void draw_paddle(u8 screen, u16 x, u8 y, u8 page) {
     gfx_draw_image_resource(screen, x, y, page, ppong_images, RES_PAD_TOP,
-                            GFX_MASKED | GFX_VRAM_ONLY);
+                            GFX_OPAQUE | GFX_VRAM_ONLY);
     gfx_draw_image_resource(screen, x, y + 16, page, ppong_images, RES_PAD_MID,
-                            GFX_MASKED | GFX_VRAM_ONLY);
+                            GFX_OPAQUE | GFX_VRAM_ONLY);
     gfx_draw_image_resource(screen, x, y + 32, page, ppong_images, RES_PAD_BOT,
-                            GFX_MASKED | GFX_VRAM_ONLY);
+                            GFX_OPAQUE | GFX_VRAM_ONLY);
 }
 
 static void restore_paddle(u8 screen, u16 x, u8 y) {
-    gfx_restore_sprite16(screen, x, y);
-    gfx_restore_sprite16(screen, x, y + 16);
-    gfx_restore_sprite16(screen, x, y + 32);
+    gfx_restore_rect(screen, x, y, PADDLE_W, PADDLE_H);
 }
 
 static void reset_ball(game_state_t *g, i8 dir) {
@@ -121,7 +128,7 @@ static void reset_game(game_state_t *g) {
 static void process_input(game_state_t *g, u8 *quit) {
     dss_key_t key;
 
-    while (dss_scankey(&key)) {
+    if (dss_scankey(&key)) {
         if (key.ascii == 27) {
             *quit = 1;
             return;
@@ -144,6 +151,11 @@ static u8 clamp_paddle(i16 y) {
 
 static u8 overlaps(i16 ax, i16 ay, i16 aw, i16 ah, i16 bx, i16 by, i16 bw, i16 bh) {
     return ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by;
+}
+
+static u8 ball_overlaps_paddle(u16 ball_x, u8 ball_y, u16 paddle_x, u8 paddle_y) {
+    return overlaps((i16)ball_x, (i16)ball_y, BALL_SIZE, BALL_SIZE,
+                    (i16)paddle_x, (i16)paddle_y, PADDLE_W, PADDLE_H);
 }
 
 static void update_game(game_state_t *g) {
@@ -214,19 +226,48 @@ static void draw_objects(u8 screen, u8 page, const game_state_t *g) {
                             ppong_images, RES_BALL, GFX_MASKED | GFX_VRAM_ONLY);
 }
 
-static void restore_objects(u8 screen, const draw_state_t *d) {
-    if (!(d->mask & (1 << screen))) return;
-    restore_paddle(screen, PLAYER_X, d->player_y[screen]);
-    restore_paddle(screen, CPU_X, d->cpu_y[screen]);
-    gfx_restore_sprite16(screen, d->ball_x[screen], d->ball_y[screen]);
-}
-
 static void remember_objects(u8 screen, draw_state_t *d, const game_state_t *g) {
     d->ball_x[screen] = (u16)g->ball_x;
     d->ball_y[screen] = (u8)g->ball_y;
     d->player_y[screen] = g->player_y;
     d->cpu_y[screen] = g->cpu_y;
     d->mask |= (1 << screen);
+}
+
+static void render_objects(u8 screen, u8 page, draw_state_t *d, const game_state_t *g) {
+    u8 player_dirty;
+    u8 cpu_dirty;
+
+    player_dirty = 1;
+    cpu_dirty = 1;
+    if (d->mask & (1 << screen)) {
+        player_dirty =
+            d->player_y[screen] != g->player_y ||
+            ball_overlaps_paddle(d->ball_x[screen], d->ball_y[screen],
+                                 PLAYER_X, d->player_y[screen]) ||
+            ball_overlaps_paddle((u16)g->ball_x, (u8)g->ball_y,
+                                 PLAYER_X, g->player_y);
+        cpu_dirty =
+            d->cpu_y[screen] != g->cpu_y ||
+            ball_overlaps_paddle(d->ball_x[screen], d->ball_y[screen],
+                                 CPU_X, d->cpu_y[screen]) ||
+            ball_overlaps_paddle((u16)g->ball_x, (u8)g->ball_y,
+                                 CPU_X, g->cpu_y);
+
+        if (player_dirty)
+            restore_paddle(screen, PLAYER_X, d->player_y[screen]);
+        if (cpu_dirty)
+            restore_paddle(screen, CPU_X, d->cpu_y[screen]);
+        gfx_restore_sprite16(screen, d->ball_x[screen], d->ball_y[screen]);
+    }
+
+    if (player_dirty)
+        draw_paddle(screen, PLAYER_X, g->player_y, page);
+    if (cpu_dirty)
+        draw_paddle(screen, CPU_X, g->cpu_y, page);
+    gfx_draw_image_resource(screen, (u16)g->ball_x, (u8)g->ball_y, page,
+                            ppong_images, RES_BALL, GFX_MASKED | GFX_VRAM_ONLY);
+    remember_objects(screen, d, g);
 }
 
 static void draw_backgrounds(u8 page) {
@@ -236,11 +277,38 @@ static void draw_backgrounds(u8 page) {
     gfx_draw_image_resource(GFX_SCREEN_1, 0, 128, page, ppong_images, RES_BG1, GFX_OPAQUE);
 }
 
-static void run_game(u8 page) {
+static i16 load_file_pages(const char *path, u8 block, u8 page_count) {
+    i16 fd;
+    i16 bytes;
+    u8 old_page;
+    u8 page;
+
+    fd = dss_open(path, O_RDONLY);
+    if (fd < 0) return -1;
+
+    old_page = inp(PORT_WIN3);
+    for (page = 0; page < page_count; page++) {
+        dss_setwin_page(3, block, page);
+        bytes = dss_read((u8)fd, (void *)0xC000, 0x4000);
+        if (bytes < 0) {
+            outp(PORT_WIN3, old_page);
+            dss_close((u8)fd);
+            return -1;
+        }
+        if (bytes < 0x4000) break;
+    }
+    outp(PORT_WIN3, old_page);
+    dss_close((u8)fd);
+    return 0;
+}
+
+static void run_game(u8 page, u8 music_page) {
     game_state_t g;
     draw_state_t d;
     u8 hidden;
     u8 quit;
+    u8 old_player_score;
+    u8 old_cpu_score;
 
     reset_game(&g);
     d.mask = 0;
@@ -255,38 +323,64 @@ static void run_game(u8 page) {
     remember_objects(GFX_SCREEN_1, &d, &g);
 
     while (!quit) {
+        video_vsync();
+        gfx_flip();
+        debug_border(BORDER_PLAYER);
+        ay_pt3_play(music_page);
+        debug_border(BORDER_AFTER);
+
         process_input(&g, &quit);
+        if (quit) break;
+
+        old_player_score = g.player_score;
+        old_cpu_score = g.cpu_score;
         update_game(&g);
 
         hidden = gfx_get_active_screen() ^ 1;
-        restore_objects(hidden, &d);
-        restore_score(hidden);
-        draw_score(hidden, page, &g);
-        draw_objects(hidden, page, &g);
-        remember_objects(hidden, &d, &g);
-
-        video_vsync();
-        gfx_flip();
+        debug_border(BORDER_BLUE);
+        if (old_player_score != g.player_score || old_cpu_score != g.cpu_score) {
+            restore_score(GFX_SCREEN_0);
+            restore_score(GFX_SCREEN_1);
+            draw_score(GFX_SCREEN_0, page, &g);
+            draw_score(GFX_SCREEN_1, page, &g);
+        }
+        render_objects(hidden, page, &d, &g);
+        debug_border(BORDER_BLACK);
     }
+    debug_border(BORDER_BLACK);
 }
 
 void main(void) {
     u8 block;
+    u8 music_block;
 
+    block = 0xFF;
+    music_block = 0xFF;
     dss_puts("PPONG demo\r\n");
     dss_puts("Loading PPONG.GFX...\r\n");
     block = dss_getmem_pages(PPONG_PAGE_COUNT);
-    if (block != 0xFF && gfx_load_resource_pages("PPONG.GFX", block, PPONG_PAGE_COUNT) > 0) {
+    dss_puts("Loading PPONG.PT3...\r\n");
+    music_block = dss_getmem_pages(MUSIC_PAGE_COUNT);
+    if (block != 0xFF &&
+        music_block != 0xFF &&
+        gfx_load_resource_pages("PPONG.GFX", block, PPONG_PAGE_COUNT) > 0 &&
+        load_file_pages("PPONG.PT3", music_block, MUSIC_PAGE_COUNT) == 0) {
         dss_puts("Cursor up/down, ESC exits.\r\n");
         video_setmode(VMODE_320);
         show_screen0();
         video_setpal_range(0, PPONG_PALETTE_COUNT, ppong_palette);
-        run_game(block);
+        ay_pt3_init(music_block);
+        run_game(block, music_block);
+        ay_pt3_mute(music_block);
     } else {
         dss_puts("Resource load failed.\r\n");
         dss_waitkey();
     }
 
+    if (music_block != 0xFF) {
+        ay_pt3_mute(music_block);
+        dss_freemem(music_block);
+    }
     if (block != 0xFF)
         dss_freemem(block);
     video_setmode(VMODE_TEXT80);

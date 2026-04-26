@@ -15,6 +15,7 @@ ZX Sprinter SDK даёт прямой доступ к вызовам DSS, BIOS, 
 #include <sprinter/bios.h>
 #include <sprinter/video.h>
 #include <sprinter/mouse.h>
+#include <sprinter/ay.h>
 #include <sprinter/ports.h>
 #include <sprinter/types.h>
 ```
@@ -397,7 +398,8 @@ void video_safe_porty(void);
 - `video_sync_enable()` включает аппаратный источник синхронизации, используемый `video_vsync()`.
 - `video_sync_disable()` отключает этот источник синхронизации.
 - `video_vsync()` включает аппаратный источник синхронизации через порт Sprinter `#004E`, затем ждёт
-  переход бита 5 порта `#FFFE` из 0 в 1. Если sync-бит недоступен, функция
+  переход бита 5 порта `#FFFE` из 1 в 0. На Sprinter это означает выход из
+  нижнего blank/border-интервала `Y > 256` и продолжение с начала кадра. Если sync-бит недоступен, функция
   откатывается к ожиданию одного прерывания, чтобы не зависать. Источник
   синхронизации остаётся включённым для следующих кадров и отключается при `video_setmode(VMODE_TEXT*)`
   или `dss_exit()`.
@@ -418,6 +420,24 @@ void video_safe_porty(void);
 #define TEXT_COLS        80
 #define TEXT_ROWS        32
 ```
+
+## sprinter/ay.h -- AY/PT3 музыка
+
+Минимальный слой для запуска PT3 player image из страничной памяти DSS. Бинарный ресурс должен содержать `pt3play.asm`, собранный под адрес `0xC000`, и PT3-модуль сразу после проигрывателя. SDK временно подключает первый лист указанного DSS-блока в `WIN3`, вызывает нужный entrypoint проигрывателя и восстанавливает окно.
+
+```c
+#include <sprinter/ay.h>
+
+u8 ay_pt3_init(u8 block);
+u8 ay_pt3_play(u8 block);
+u8 ay_pt3_mute(u8 block);
+```
+
+- `ay_pt3_init(block)` вызывает `START` проигрывателя и инициализирует модуль, лежащий сразу после player code.
+- `ay_pt3_play(block)` вызывает `START+5`; его нужно вызывать один раз на кадр, обычно сразу после `video_vsync()` или из кадрового обработчика прерывания.
+- `ay_pt3_mute(block)` вызывает `START+8`; используйте перед паузой, выходом или освобождением DSS-блока.
+- Все функции возвращают `0` при успехе или код ошибки DSS `SETWIN`, если страницу не удалось подключить.
+- Страница с player image должна оставаться выделенной всё время воспроизведения. Перед `dss_freemem(block)` обязательно вызовите `ay_pt3_mute(block)`.
 
 ## sprinter/gfx.h -- Опциональная графическая библиотека
 

@@ -14,6 +14,7 @@ examples/*/*.exe
 *.lst
 *.rst
 *.asm
+!examples/24_ppong/music/pt3play.asm
 bj-ext=.o
 
 # Platform-specific tool binaries

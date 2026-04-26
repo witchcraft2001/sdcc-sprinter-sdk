@@ -184,7 +184,7 @@ video_vsync();
 video_swap();
 ```
 
-The `video_swap()` function toggles the display buffer via bit 0 of the RGMOD port (`#C9`). While the screen shows one buffer, you draw into the other. `video_vsync()` uses the Sprinter hardware sync bit on `#FFFE.5`, so animated examples should call it immediately before `gfx_flip()`/`video_swap()`. Static examples do not need per-frame sync unless they flip visible pages.
+The `video_swap()` function toggles the display buffer via bit 0 of the RGMOD port (`#C9`). While the screen shows one buffer, you draw into the other. `video_vsync()` uses the Sprinter hardware sync bit on `#FFFE.5` and returns at the start of a frame, so animated examples should call it immediately before `gfx_flip()`/`video_swap()`. Static examples do not need per-frame sync unless they flip visible pages.
 
 ## Optional gfx.lib
 

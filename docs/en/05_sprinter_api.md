@@ -15,6 +15,7 @@ Or include only the parts you need:
 #include <sprinter/bios.h>
 #include <sprinter/video.h>
 #include <sprinter/mouse.h>
+#include <sprinter/ay.h>
 #include <sprinter/ports.h>
 #include <sprinter/types.h>
 ```
@@ -397,7 +398,9 @@ void video_safe_porty(void);
 - `video_sync_enable()` enables the Sprinter hardware sync source used by `video_vsync()`.
 - `video_sync_disable()` disables that sync source again.
 - `video_vsync()` enables the hardware sync source through Sprinter port `#004E`, then waits for
-  the `#FFFE` bit 5 low-to-high transition. If the sync bit is unavailable, it
+  the `#FFFE` bit 5 high-to-low transition. On Sprinter this means leaving the
+  `Y > 256` bottom blank/border interval and resuming at the start of a frame.
+  If the sync bit is unavailable, it
   falls back to one interrupt wait instead of hanging. The sync source remains enabled for
   subsequent frames and is disabled again by `video_setmode(VMODE_TEXT*)` or
   `dss_exit()`.
@@ -418,6 +421,24 @@ void video_safe_porty(void);
 #define TEXT_COLS        80
 #define TEXT_ROWS        32
 ```
+
+## sprinter/ay.h -- AY/PT3 Music
+
+Minimal layer for running a PT3 player image from DSS paged memory. The binary resource must contain `pt3play.asm` assembled for address `0xC000`, followed immediately by the PT3 module. The SDK temporarily maps the first page of the requested DSS block to `WIN3`, calls the requested player entrypoint, and restores the window.
+
+```c
+#include <sprinter/ay.h>
+
+u8 ay_pt3_init(u8 block);
+u8 ay_pt3_play(u8 block);
+u8 ay_pt3_mute(u8 block);
+```
+
+- `ay_pt3_init(block)` calls the player's `START` entry and initializes the module placed right after the player code.
+- `ay_pt3_play(block)` calls `START+5`; call it once per frame, typically right after `video_vsync()` or from a frame interrupt handler.
+- `ay_pt3_mute(block)` calls `START+8`; use it before pause, exit, or freeing the DSS block.
+- All functions return `0` on success or the DSS `SETWIN` error code if the page cannot be mapped.
+- The page with the player image must remain allocated while music is playing. Always call `ay_pt3_mute(block)` before `dss_freemem(block)`.
 
 ## sprinter/gfx.h -- Optional Graphics Library
 

@@ -20,7 +20,8 @@ Free asset candidates checked for later replacement:
 - OpenGameArt, "Jelly 16x16 font" by shiru8bit, license CC0 or CC-BY 3.0.
 - OpenGameArt, "Space background" by drakzlin, license CC0.
 
-Keep all deployed filenames DOS 8.3 compatible: `PPONG.EXE`, `PPONG.GFX`.
+Keep all deployed filenames DOS 8.3 compatible: `PPONG.EXE`, `PPONG.GFX`,
+`PPONG.PT3`.
 
 ## Required Source Format
 
@@ -95,6 +96,31 @@ Manual workflow for quick local testing:
 For committed SDK changes, prefer the recommended workflow and make
 `make_assets.py` deterministic so a clean checkout can rebuild the same assets.
 
+## Music Resource
+
+`PPONG.PT3` is not a plain PT3 module. It is a runtime image assembled at
+`0xC000`: first the Vortex Tracker `pt3play.asm` player, then the selected PT3
+module immediately after it. The SDK AY API maps this file into `WIN3` and calls
+the player entrypoints at `0xC000`, `0xC005`, and `0xC008`.
+
+By default the example uses the bundled track:
+
+```text
+examples/24_ppong/music/mus2.pt3
+```
+
+To replace the music, replace `music/mus2.pt3` or override `PT3_MODULE` when
+building:
+
+```sh
+make -C examples/24_ppong SDK_DIR=$(pwd)/ \
+  PT3_MODULE=/path/to/your/music.pt3
+```
+
+The combined player+module image must fit into one 16 KB DSS page because the
+current example allocates one page for music. If you need a larger module, split
+or extend the loader and AY API usage accordingly.
+
 ## Rebuild Commands
 
 From the SDK root:
@@ -114,7 +140,8 @@ scripts/make_floppy.sh
 scripts/deploy_img_local.sh
 ```
 
-The deployed files on the target image are `PPONG.EXE` and `PPONG.GFX`.
+The deployed files on the target image are `PPONG.EXE`, `PPONG.GFX`, and
+`PPONG.PT3`.
 
 ## CC0 Notes
 
