@@ -90,14 +90,43 @@ def parse_transparent(value, rows):
     return int(value, 0) & 0xFF
 
 
-def convert_rows(rows, src_palette, dst_palette, transparent_index):
+def build_palette(images, sheets):
+    palette = []
+    palette_map = {}
+
+    def add_rgb(rgb):
+        if rgb in palette_map:
+            return
+        if len(palette) >= 255:
+            raise ValueError("combined palette exceeds 255 colors")
+        palette_map[rgb] = len(palette)
+        palette.append(rgb)
+
+    for _, _, src_palette, rows in images:
+        for row in rows:
+            for idx in row:
+                add_rgb(src_palette[idx])
+
+    for _, _, _, _, src_palette, rows, transparent_index in sheets:
+        for row in rows:
+            for idx in row:
+                if transparent_index is not None and idx == transparent_index:
+                    continue
+                add_rgb(src_palette[idx])
+
+    return palette, palette_map
+
+
+def convert_rows(rows, src_palette, dst_palette, transparent_index, palette_map=None):
     out = bytearray()
-    allow_255 = transparent_index is None
+    allow_255 = transparent_index is None and palette_map is None
 
     for row in rows:
         for idx in row:
             if transparent_index is not None and idx == transparent_index:
                 out.append(TRANSPARENT)
+            elif palette_map is not None:
+                out.append(palette_map[src_palette[idx]])
             else:
                 out.append(nearest_index(src_palette[idx], dst_palette, allow_255))
     return bytes(out)
@@ -171,7 +200,7 @@ def main():
     parser.add_argument("--out", required=True)
     parser.add_argument("--header", required=True)
     parser.add_argument("--name", default="bmp_gfx")
-    parser.add_argument("--palette", required=True, help="8-bit BMP whose palette is used for all entries")
+    parser.add_argument("--palette", help="8-bit BMP whose palette is used for all entries; omit to build one from all images")
     parser.add_argument("--image", action="append", default=[], help="full BMP image to add")
     parser.add_argument("--sheet", action="append", default=[], help="sprite sheet BMP as PATH:WxH")
     parser.add_argument("--sheet-transparent-index", default="auto",
@@ -179,23 +208,36 @@ def main():
     args = parser.parse_args()
 
     name = c_ident(args.name)
-    _, _, dst_palette, _ = read_bmp8(args.palette)
     entries = []
+    images = []
+    sheets = []
 
     for path in args.image:
         width, height, src_palette, rows = read_bmp8(path)
-        pixels = convert_rows(rows, src_palette, dst_palette, None)
-        entries.append((width, height, pixels, 0))
+        images.append((width, height, src_palette, rows))
 
     for spec in args.sheet:
         path, tile_w, tile_h = parse_sheet(spec)
         width, height, src_palette, rows = read_bmp8(path)
         transparent_index = parse_transparent(args.sheet_transparent_index, rows)
+        sheets.append((width, height, tile_w, tile_h, src_palette, rows, transparent_index))
 
+    if args.palette:
+        _, _, dst_palette, _ = read_bmp8(args.palette)
+        palette_map = None
+    else:
+        dst_palette, palette_map = build_palette(images, sheets)
+
+    for width, height, src_palette, rows in images:
+        pixels = convert_rows(rows, src_palette, dst_palette, None, palette_map)
+        entries.append((width, height, pixels, 0))
+
+    for width, height, tile_w, tile_h, src_palette, rows, transparent_index in sheets:
         for y in range(0, height, tile_h):
             for x in range(0, width, tile_w):
                 tile = slice_rows(rows, x, y, tile_w, tile_h)
-                pixels = convert_rows(tile, src_palette, dst_palette, transparent_index)
+                pixels = convert_rows(tile, src_palette, dst_palette,
+                                      transparent_index, palette_map)
                 entries.append((tile_w, tile_h, pixels, 1))
 
     if not entries:

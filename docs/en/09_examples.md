@@ -1,6 +1,6 @@
 # Examples
 
-The SDK includes 21 example programs demonstrating various SDK features. All examples are in the `examples/` directory, each with its own `main.c` and `Makefile`.
+The SDK includes 24 example programs demonstrating various SDK features. All examples are in the `examples/` directory, each with its own `main.c` and `Makefile`.
 
 ## Building Examples
 
@@ -206,6 +206,18 @@ Shows resource preparation through `tools/png2gfx.py`, generated `.gfx` and `res
 Expected output: a black graphics screen with two X/cross sprites loaded from `GFXDEMO.GFX`. The example flips to the copied graphics screen after drawing, then flips back on the next key press.
 
 **Demonstrates:** `gfx_load_resource_pages()`, `gfx_draw_resource()`, `gfx_resource_t`, generated PNG resources, external `EXTRA_LIBS`.
+
+### 22_balls -- Animated Balls (~7 KB + `.gfx`)
+
+Demonstrates masked 16x16 sprites, a loaded bitmap background, shadow-page restore, and double buffering.
+
+### 23_fesync -- FE Sync Probe (~1 KB)
+
+Diagnostic DSS EXE for checking the Sprinter `#FE.5`/CBL sync bit on real hardware and in MAME.
+
+### 24_ppong -- Pong Mini-Game (~9 KB + `.gfx`)
+
+Human-vs-computer Pong-style demo using a loaded 320x256 background, 16x16 ball sprite, segmented paddle sprites, 16x16 bitmap font resources, double buffering, cursor up/down controls, and ESC to exit.
 
 ## Creating Your Own Example
 

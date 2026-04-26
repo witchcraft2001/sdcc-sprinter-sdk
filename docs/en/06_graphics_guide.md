@@ -244,6 +244,31 @@ python3 tools/png2gfx.py \
 
 The tool accepts non-interlaced 8-bit RGB/RGBA/indexed PNGs, builds one shared palette with up to 255 opaque colors, uses `0xFF` as transparent pixels, and writes a page-friendly `.gfx` file where resource payloads do not cross 16 KB page boundaries. The generated header contains `video_rgb6_t *_palette[]` and `gfx_resource_t *_resources[]`.
 
+## BMP Resources
+
+For 8-bit indexed BMP files, use `tools/bmp2gfx.py`. It supports full images
+through `--image` and sprite sheets through `--sheet PATH:WxH`:
+
+```bash
+python3 tools/bmp2gfx.py \
+    --out ppong.gfx \
+    --header res.h \
+    --name ppong \
+    --image assets/bg0.bmp \
+    --image assets/bg1.bmp \
+    --sheet assets/sprites.bmp:16x16 \
+    --sheet-transparent-index 255
+```
+
+When `--palette` is omitted, the tool builds one shared palette from all input
+images and sheet tiles. The transparent sheet index is excluded from the palette.
+The limit is 255 opaque colors; exceeding it stops the build with
+`combined palette exceeds 255 colors`.
+
+For legacy or fixed-palette workflows, pass `--palette file.bmp`. In that mode,
+the specified BMP provides the palette and all other images are remapped to the
+nearest colors from that palette.
+
 At runtime, load the file into paged memory and pass the base page plus resource id when drawing:
 
 ```c
