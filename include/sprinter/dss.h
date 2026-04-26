@@ -289,16 +289,22 @@ void dss_settime(dss_date_t *d, dss_time_t *t) SPRINTER_NAKED_DECL;
 
 /* --- Memory --- */
 
-/** Set memory window page.
+/** Set memory window to the first page of a DSS memory block.
  *  win: 0-3 (memory window number)
- *  page: RAM page number
+ *  page: DSS memory block id returned by dss_getmem()
  */
 void dss_setwin(u8 win, u8 page) SPRINTER_NAKED_DECL;
 
-/** Allocate a memory page. Returns page/block id, or 0xFF if DSS GETMEM reports an error */
+/** Set memory window to a logical page inside a DSS memory block. */
+void dss_setwin_page(u8 win, u8 block, u8 page) SPRINTER_NAKED_DECL;
+
+/** Allocate one memory page. Returns block id, or 0xFF if DSS GETMEM reports an error */
 u8 dss_getmem(void) SPRINTER_NAKED_DECL;
 
-/** Free a memory page */
+/** Allocate a memory block. Returns block id, or 0xFF if DSS GETMEM reports an error */
+u8 dss_getmem_pages(u8 pages) SPRINTER_NAKED_DECL;
+
+/** Free a memory block */
 void dss_freemem(u8 page) SPRINTER_NAKED_DECL;
 
 /** Get memory info: total and free page counts */

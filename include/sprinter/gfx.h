@@ -32,6 +32,15 @@ typedef struct gfx_resource {
     u8  flags;
 } gfx_resource_t;
 
+typedef struct gfx_image {
+    u8  page_delta;
+    u16 offset;
+    u16 size;
+    u16 width;
+    u8  height;
+    u8  flags;
+} gfx_image_t;
+
 void gfx_set_screen(u8 screen);
 u8   gfx_get_screen(void);
 u8   gfx_get_active_screen(void) SPRINTER_NAKED_DECL;
@@ -64,5 +73,11 @@ void gfx_copy_screen(u8 dst_screen, u8 src_screen);
 i16 gfx_load_resource_pages(const char *path, u8 first_page, u8 page_count);
 u8  gfx_draw_resource(u8 screen, u16 x, u8 y, u8 base_page,
                       const gfx_resource_t *resources, u8 id, u8 flags);
+void gfx_draw_image(u8 screen, u16 x, u8 y, u16 width, u8 height,
+                    const void *data, u8 flags);
+u8   gfx_draw_image_page(u8 screen, u16 x, u8 y, u8 base_page,
+                         const gfx_image_t *image, u8 flags);
+u8   gfx_draw_image_resource(u8 screen, u16 x, u8 y, u8 base_page,
+                             const gfx_image_t *images, u8 id, u8 flags);
 
 #endif /* _SPRINTER_GFX_H */

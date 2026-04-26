@@ -78,6 +78,9 @@ u16 bios_version(void) SPRINTER_NAKED_DECL;
 /** Get board/Sprinter type */
 u8 bios_board_id(void) SPRINTER_NAKED_DECL;
 
+/** Fill pages with physical pages for an EMM/DSS block. Returns page count. */
+u8 bios_emm_list(u8 block, u8 *pages) SPRINTER_NAKED_DECL;
+
 /** Read I/O port */
 u8 inp(u16 port) SPRINTER_NAKED_DECL;
 

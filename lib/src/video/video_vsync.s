@@ -4,12 +4,8 @@
         .area   _CODE
 
 _video_vsync::
-_vsync_wait:
-        in      a,(#0xC9)
-        bit     5,a
-        jr      z,_vsync_wait
-_vsync_wait2:
-        in      a,(#0xC9)
-        bit     5,a
-        jr      nz,_vsync_wait2
+        ; DSS keeps the platform interrupt handlers active. A plain HALT is
+        ; safer here than polling #FE.5: on some setups that sync bit is stuck.
+        ei
+        halt
         ret

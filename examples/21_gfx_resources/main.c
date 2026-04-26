@@ -26,13 +26,16 @@ static void show_screen0(void) {
 void main(void) {
     u8 page;
 
-    video_setmode(VMODE_320);
-    show_screen0();
-    video_setpal_range(0, DEMO_GFX_PALETTE_COUNT, demo_gfx_palette);
-    clear_screens();
-
+    dss_puts("GFX resource demo\r\n");
+    dss_puts("Loading GFXDEMO.GFX...\r\n");
     page = dss_getmem();
     if (page != 0xFF && gfx_load_resource_pages("GFXDEMO.GFX", page, 1) > 0) {
+        dss_puts("Drawing sprites...\r\n");
+        dss_puts("In graphics mode: key flips, next key exits.\r\n");
+        video_setmode(VMODE_320);
+        show_screen0();
+        video_setpal_range(0, DEMO_GFX_PALETTE_COUNT, demo_gfx_palette);
+        clear_screens();
         gfx_draw_resource(GFX_SCREEN_0, 72, 70, page, demo_gfx_resources, 0, GFX_MASKED);
         gfx_draw_resource(GFX_SCREEN_0, 140, 100, page, demo_gfx_resources, 1, GFX_MASKED);
         gfx_copy_screen(GFX_SCREEN_1, GFX_SCREEN_0);
@@ -42,6 +45,7 @@ void main(void) {
         dss_waitkey();
         dss_freemem(page);
     } else {
+        dss_puts("Resource load failed.\r\n");
         dss_waitkey();
     }
 

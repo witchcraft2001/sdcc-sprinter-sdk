@@ -4,6 +4,10 @@
         .globl  _gfx_draw_sprite8
         .globl  _gfx_draw_sprite16
         .globl  _gfx_draw_sprite24
+        .globl  _gfx_draw_sprite8_win0
+        .globl  _gfx_draw_sprite16_win0
+        .globl  _gfx_draw_sprite24_win0
+        .globl  _gfx_blit_line_accel
         .globl  _gfx_restore_rect
         .globl  _gfx_copy_rect
 
@@ -170,6 +174,152 @@ _gfx_draw_sprite24::
         pop     ix
         ret
 
+_gfx_draw_sprite8_win0::
+        push    ix
+        ld      iy, #4
+        add     iy, sp
+        ld      l, 1 (iy)
+        ld      h, 2 (iy)
+        ld      a, 0 (iy)
+        call    _gfx_dest_addr
+        ex      de, hl
+        ld      l, 4 (iy)
+        ld      h, 5 (iy)
+        ld      c, 3 (iy)
+        in      a, (#0xE2)
+        push    af
+        ld      a, 6 (iy)
+        call    _gfx_page_from_flags
+        out     (#0xE2), a
+        ld      b, #8
+draw8_win0_loop:
+        push    bc
+        ld      a, c
+        out     (#0x89), a
+        push    de
+        ld      bc, #8
+        ldir
+        pop     de
+        pop     bc
+        inc     c
+        djnz    draw8_win0_loop
+        pop     af
+        out     (#0xE2), a
+        ld      a, #0xC0
+        out     (#0x89), a
+        pop     ix
+        ret
+
+_gfx_draw_sprite16_win0::
+        push    ix
+        ld      iy, #4
+        add     iy, sp
+        ld      l, 1 (iy)
+        ld      h, 2 (iy)
+        ld      a, 0 (iy)
+        call    _gfx_dest_addr
+        ex      de, hl
+        ld      l, 4 (iy)
+        ld      h, 5 (iy)
+        ld      c, 3 (iy)
+        in      a, (#0xE2)
+        push    af
+        ld      a, 6 (iy)
+        call    _gfx_page_from_flags
+        out     (#0xE2), a
+        ld      b, #16
+draw16_win0_loop:
+        push    bc
+        ld      a, c
+        out     (#0x89), a
+        ld      d, d
+        ld      a, #16
+        ld      l, l
+        ld      a, (hl)
+        ld      (de), a
+        ld      b, b
+        ld      bc, #16
+        add     hl, bc
+        pop     bc
+        inc     c
+        djnz    draw16_win0_loop
+        pop     af
+        out     (#0xE2), a
+        ld      a, #0xC0
+        out     (#0x89), a
+        pop     ix
+        ret
+
+_gfx_draw_sprite24_win0::
+        push    ix
+        ld      iy, #4
+        add     iy, sp
+        ld      l, 1 (iy)
+        ld      h, 2 (iy)
+        ld      a, 0 (iy)
+        call    _gfx_dest_addr
+        ex      de, hl
+        ld      l, 4 (iy)
+        ld      h, 5 (iy)
+        ld      c, 3 (iy)
+        in      a, (#0xE2)
+        push    af
+        ld      a, 6 (iy)
+        call    _gfx_page_from_flags
+        out     (#0xE2), a
+        ld      b, #24
+draw24_win0_loop:
+        push    bc
+        ld      a, c
+        out     (#0x89), a
+        ld      d, d
+        ld      a, #24
+        ld      l, l
+        ld      a, (hl)
+        ld      (de), a
+        ld      b, b
+        ld      bc, #24
+        add     hl, bc
+        pop     bc
+        inc     c
+        djnz    draw24_win0_loop
+        pop     af
+        out     (#0xE2), a
+        ld      a, #0xC0
+        out     (#0x89), a
+        pop     ix
+        ret
+
+; Copy one visible line fragment from any mapped RAM window to VRAM.
+; Signature:
+;   void gfx_blit_line_accel(u8 screen, u16 x, u8 y,
+;                            const void *src, u8 width);
+; Preconditions:
+;   - WIN3 is already mapped to the desired VRAM page.
+;   - interrupts are already disabled by the caller.
+;   - width is 1..255.
+_gfx_blit_line_accel::
+        push    ix
+        ld      iy, #4
+        add     iy, sp
+        ld      l, 1 (iy)
+        ld      h, 2 (iy)
+        ld      a, 0 (iy)
+        call    _gfx_dest_addr
+        ex      de, hl
+        ld      l, 4 (iy)
+        ld      h, 5 (iy)
+        ld      a, 3 (iy)
+        out     (#0x89), a
+        ld      d, d
+        ld      a, 6 (iy)
+        ld      l, l
+        ld      a, (hl)
+        ld      (de), a
+        ld      b, b
+        pop     ix
+        ret
+
 _gfx_restore_rect::
         push    ix
         ld      iy, #4
@@ -227,7 +377,7 @@ _gfx_copy_rect::
         out     (#0xE2), a
         ld      c, 4 (iy)
         ld      b, 6 (iy)
-8$:
+copy_rect_loop:
         push    bc
         ld      a, c
         out     (#0x89), a
@@ -241,7 +391,7 @@ _gfx_copy_rect::
         ei
         pop     bc
         inc     c
-        djnz    8$
+        djnz    copy_rect_loop
         pop     af
         out     (#0xE2), a
         ld      a, #0xC0

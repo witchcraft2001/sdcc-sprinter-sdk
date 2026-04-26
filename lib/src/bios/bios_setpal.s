@@ -5,21 +5,55 @@
 
 _bios_setpal::
         push    ix
-        ld      iy,#4
-        add     iy,sp
-        ld      d,0(iy)
-        ld      e,1(iy)
-
-        ld      a,#0xC0
-        out     (#0x89),a
-        ld      a,d
-        out     (#0x89),a
-        ld      a,e
-        out     (#0x89),a
-        ld      a,2(iy)
-        out     (#0x89),a
-        ld      a,3(iy)
-        out     (#0x89),a
-
+        ld      ix,#0x0000
+        add     ix,sp
+        ld      hl,#-4
+        add     hl,sp
+        ld      sp,hl
+        ld      a,5(ix)
+        add     a,a
+        add     a,a
+        ld      -4(ix),a
+        ld      a,6(ix)
+        add     a,a
+        add     a,a
+        ld      -3(ix),a
+        ld      a,7(ix)
+        add     a,a
+        add     a,a
+        ld      -2(ix),a
+        xor     a
+        ld      -1(ix),a
+        ld      l,4(ix)
+        ld      d,#1
+        ld      e,l
+        xor     a
+        ld      b,#0xFF
+        push    ix
+        pop     hl
+        dec     hl
+        dec     hl
+        dec     hl
+        dec     hl
+        ld      c,#0xA4
+        push    ix
+        rst     #0x08
+        pop     ix
+        ld      l,4(ix)
+        ld      d,#1
+        ld      e,l
+        ld      a,#1
+        ld      b,#0xFF
+        push    ix
+        pop     hl
+        dec     hl
+        dec     hl
+        dec     hl
+        dec     hl
+        ld      c,#0xA4
+        rst     #0x08
+        ld      hl,#4
+        add     hl,sp
+        ld      sp,hl
         pop     ix
         ret

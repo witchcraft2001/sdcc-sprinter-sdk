@@ -42,3 +42,4 @@ config.local.mk
 scripts/deploy_img_local.sh
 AGENTS.md
 CLAUDE.md
+examples/*.gfx
