@@ -448,6 +448,11 @@ void gfx_restore_sprite16(u8 screen, u16 x, u8 y);
 void gfx_restore_sprite24(u8 screen, u16 x, u8 y);
 
 void gfx_copy_rect(u8 dst_screen, u8 src_screen, u16 x, u8 y, u8 width, u8 height);
+void gfx_blit_rect(u8 dst_screen, u16 dst_x, u8 dst_y,
+                   u8 src_screen, u16 src_x, u8 src_y,
+                   u8 width, u8 height);
+void gfx_scroll_rect(u8 screen, u16 dst_x, u8 dst_y,
+                     u16 src_x, u8 src_y, u8 width, u8 height);
 void gfx_copy_screen(u8 dst_screen, u8 src_screen);
 void gfx_flip(void);
 
@@ -459,11 +464,15 @@ u8  gfx_draw_resource(u8 screen, u16 x, u8 y, u8 base_page,
 Key flags:
 - `GFX_OPAQUE` -- normal copy.
 - `GFX_MASKED` -- color `0xFF` is transparent.
-- `GFX_VRAM_ONLY` -- draw to VRAM only, without updating the shadow page.
+- `GFX_VRAM_ONLY` -- draw to VRAM only, without updating the video DRAM mirror.
 
 Primitive functions use palette indices from the current graphics palette and accept the same `screen` and `flags` arguments as sprite functions. For `gfx_draw_vline()` and `gfx_fill_rect()`, `height == 0` means 256 rows, matching the existing full-screen copy convention.
 
-Sprites that are 16 or 24 pixels wide, `gfx_restore_rect()`, and `gfx_copy_rect()` use the Sprinter hardware accelerator. Primitive functions are implemented as clipped direct VRAM writes. To link a single example, set `EXTRA_LIBS=$(SDK_DIR)build/gfx.lib`; from the SDK root, build the archive with `make gfx`.
+`gfx_restore_rect()` restores a VRAM area from the DRAM mirror of the same screen. This is the Sprinter hardware mechanism for erasing temporary sprites: draw the background normally, draw the sprite with `GFX_VRAM_ONLY`, then copy the background preserved in DRAM back to VRAM.
+
+`gfx_copy_rect()` copies a rectangle between logical screens 0/1 at the same coordinates. It is not the shadow-restore helper; it copies between screens, while the source is read from that screen's DRAM mirror. `gfx_blit_rect()` copies from independent source coordinates to independent destination coordinates, including same-screen scrolling cases. `gfx_scroll_rect()` is a same-screen convenience wrapper around `gfx_blit_rect()`. Sprites that are 16 or 24 pixels wide, `gfx_restore_rect()`, `gfx_copy_rect()`, and `gfx_blit_rect()` use the Sprinter hardware accelerator. Primitive functions are implemented as clipped direct VRAM writes. To link a single example, set `EXTRA_LIBS=$(SDK_DIR)build/gfx.lib`; from the SDK root, build the archive with `make gfx`.
+
+For rectangle copy helpers, `height == 0` means 256 rows. `width == 0` is passed to the accelerator as a 256-byte line. `gfx_blit_rect()` copies through an internal 256-byte line buffer, so horizontal overlap is safe; when source and destination are on the same screen and the destination starts below the source, it copies rows bottom-up for vertical scrolling.
 
 ## sprinter/mouse.h -- Mouse Driver
 

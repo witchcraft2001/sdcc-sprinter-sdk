@@ -1,6 +1,6 @@
 # Examples
 
-The SDK includes 24 example programs demonstrating various SDK features. All examples are in the `examples/` directory, each with its own `main.c` and `Makefile`.
+The SDK includes 25 example programs demonstrating various SDK features. All examples are in the `examples/` directory, each with its own `main.c` and `Makefile`.
 
 ## Building Examples
 
@@ -193,9 +193,9 @@ Reads the current DSS video mode/page, reapplies the same mode, clears a text wi
 
 ### 20_gfxst -- Static gfx.lib Sprites (~2 KB)
 
-Demonstrates the separate `gfx.lib` archive: fixed 8x8, 16x16, and 24x24 sprites, transparent color `0xFF`, drawing to both graphics screens, `GFX_VRAM_ONLY`, and background restore from the shadow page.
+Demonstrates the separate `gfx.lib` archive: fixed 8x8, 16x16, and 24x24 sprites, transparent color `0xFF`, drawing to both graphics screens, `GFX_VRAM_ONLY`, and background restore from the DRAM mirror.
 
-Expected output: a black graphics screen with a white border, a red filled rectangle in the lower-left area, a thin gray diagonal line, a thick blue diagonal line, a white circle in the lower-right area, and four small X/cross sprites. After the first key press, the rightmost temporary sprite is restored from the shadow page; after the second key press, the example returns to text mode.
+Expected output: a black graphics screen with a white border, a red filled rectangle in the lower-left area, a thin gray diagonal line, a thick blue diagonal line, a white circle in the lower-right area, and four small X/cross sprites. After the first key press, the rightmost temporary sprite is restored from the DRAM mirror; after the second key press, the example returns to text mode.
 
 **Demonstrates:** `gfx_draw_sprite8()`, `gfx_draw_sprite16()`, `gfx_draw_sprite24()`, `gfx_draw_line()`, `gfx_draw_line_thick()`, `gfx_draw_rect()`, `gfx_fill_rect()`, `gfx_draw_circle()`, `gfx_restore_sprite16()`, `video_setpal_range()`.
 
@@ -209,7 +209,7 @@ Expected output: a black graphics screen with two X/cross sprites loaded from `G
 
 ### 22_balls -- Animated Balls (~7 KB + `.gfx`)
 
-Demonstrates masked 16x16 sprites, a loaded bitmap background, shadow-page restore, and double buffering.
+Demonstrates masked 16x16 sprites, a loaded bitmap background, DRAM-mirror restore, and double buffering.
 
 ### 23_fesync -- FE Sync Probe (~1 KB)
 
@@ -218,6 +218,10 @@ Diagnostic DSS EXE for checking the Sprinter `#FE.5`/CBL sync bit on real hardwa
 ### 24_ppong -- Pong Mini-Game (~9 KB + `.gfx`)
 
 Human-vs-computer Pong-style demo using a loaded 320x256 background, 16x16 ball sprite, segmented paddle sprites, 16x16 bitmap font resources, double buffering, cursor up/down controls, and ESC to exit.
+
+### 25_gfxblit -- Accelerated Blit/Scroll Test (~4 KB)
+
+Visual check for `gfx_blit_rect()`, `gfx_scroll_rect()`, `gfx_copy_rect()`, and `gfx_restore_rect()`. The first screen shows a source block copied to another position, a scrolled pattern block, and a temporary sprite; press a key to restore the sprite from the DRAM mirror, press again to switch to screen 1 with copied blocks, then press once more to exit.
 
 ## Creating Your Own Example
 

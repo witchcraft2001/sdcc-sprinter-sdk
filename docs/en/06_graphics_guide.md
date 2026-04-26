@@ -205,12 +205,13 @@ gfx_draw_sprite24(GFX_SCREEN_1, 120, 40, sprite24, GFX_MASKED);
 
 gfx_restore_sprite16(GFX_SCREEN_0, 80, 40);
 gfx_copy_screen(GFX_SCREEN_1, GFX_SCREEN_0);
+gfx_blit_rect(GFX_SCREEN_0, 32, 40, GFX_SCREEN_0, 32, 48, 128, 64);
 gfx_flip();
 ```
 
 Fixed sprite sizes are 8x8, 16x16, and 24x24. Color `0xFF` is transparent when `GFX_MASKED` is set. 16x16 and 24x24 sprites, rectangle copies, and background restore use the Sprinter hardware accelerator.
 
-Restore works by copying from the shadow page of the same screen. To draw something temporarily without updating the shadow page, use `GFX_VRAM_ONLY`, then call `gfx_restore_rect()` or one of the `gfx_restore_sprite*()` helpers.
+Restore works by copying from the DRAM mirror of the same screen back to VRAM. To draw something temporarily without updating the saved background, use `GFX_VRAM_ONLY`, then call `gfx_restore_rect()` or one of the `gfx_restore_sprite*()` helpers. `gfx_copy_rect()` copies between screens at the same coordinates; `gfx_blit_rect()` copies between arbitrary source and destination coordinates and is suitable for accelerated scrolling.
 
 ### Graphics Primitives
 
@@ -226,7 +227,7 @@ gfx_fill_rect(GFX_SCREEN_0, 20, 204, 80, 22, 1, GFX_OPAQUE);
 gfx_draw_circle(GFX_SCREEN_0, 260, 190, 24, 14, GFX_OPAQUE);
 ```
 
-Lines are clipped to the 320x256 screen. `gfx_draw_line_thick()` uses a square brush with the requested thickness, so diagonal thick lines look like a stepped band. `gfx_fill_rect()` and `gfx_draw_vline()` treat `height == 0` as 256 rows, which is useful for full-screen operations. Use `GFX_VRAM_ONLY` for temporary primitives that should later be removed by restoring from the shadow page.
+Lines are clipped to the 320x256 screen. `gfx_draw_line_thick()` uses a square brush with the requested thickness, so diagonal thick lines look like a stepped band. `gfx_fill_rect()` and `gfx_draw_vline()` treat `height == 0` as 256 rows, which is useful for full-screen operations. Use `GFX_VRAM_ONLY` for temporary primitives that should later be removed by restoring from the DRAM mirror.
 
 The `20_gfxst` example demonstrates the primitive layer together with sprites: a white screen border, a red filled rectangle, a thin gray line, a thick blue diagonal line, a white circle, and four X/cross sprites.
 

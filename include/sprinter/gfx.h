@@ -17,7 +17,7 @@
 
 #define GFX_OPAQUE          0x00
 #define GFX_MASKED          0x01    /* Skip color 0xFF via VRAM transparent mode */
-#define GFX_VRAM_ONLY       0x02    /* Do not update shadow RAM */
+#define GFX_VRAM_ONLY       0x02    /* Write only to VRAM, leave the DRAM mirror intact */
 
 #define GFX_TRANSPARENT_COLOR 0xFF
 
@@ -62,12 +62,19 @@ void gfx_draw_rect_thick(u8 screen, u16 x, u8 y, u16 width, u8 height,
 void gfx_fill_rect(u8 screen, u16 x, u8 y, u16 width, u8 height, u8 color, u8 flags);
 void gfx_draw_circle(u8 screen, u16 cx, u8 cy, u8 radius, u8 color, u8 flags);
 
+/* Restore VRAM from the DRAM mirror preserved by GFX_VRAM_ONLY drawing. */
 void gfx_restore_rect(u8 screen, u16 x, u8 y, u8 width, u8 height) SPRINTER_NAKED_DECL;
 void gfx_restore_sprite8(u8 screen, u16 x, u8 y);
 void gfx_restore_sprite16(u8 screen, u16 x, u8 y);
 void gfx_restore_sprite24(u8 screen, u16 x, u8 y);
 
+/* Copy the same rectangle coordinates between logical screens 0/1. */
 void gfx_copy_rect(u8 dst_screen, u8 src_screen, u16 x, u8 y, u8 width, u8 height) SPRINTER_NAKED_DECL;
+void gfx_blit_rect(u8 dst_screen, u16 dst_x, u8 dst_y,
+                   u8 src_screen, u16 src_x, u8 src_y,
+                   u8 width, u8 height) SPRINTER_NAKED_DECL;
+void gfx_scroll_rect(u8 screen, u16 dst_x, u8 dst_y,
+                     u16 src_x, u8 src_y, u8 width, u8 height);
 void gfx_copy_screen(u8 dst_screen, u8 src_screen);
 
 i16 gfx_load_resource_pages(const char *path, u8 first_page, u8 page_count);
