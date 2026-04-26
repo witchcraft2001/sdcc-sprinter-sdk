@@ -184,7 +184,7 @@ video_vsync();
 video_swap();
 ```
 
-The `video_swap()` function toggles the display buffer via the RGMOD port. While the screen shows one buffer, you draw into the other.
+The `video_swap()` function toggles the display buffer via bit 0 of the RGMOD port (`#C9`). While the screen shows one buffer, you draw into the other.
 
 ## Optional gfx.lib
 

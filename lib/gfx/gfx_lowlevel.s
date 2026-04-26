@@ -42,15 +42,14 @@ _gfx_dest_addr:
 
 _gfx_get_active_screen::
         in      a, (#0xC9)
-        and     #2
-        rrca
+        and     #1
         ld      l, a
         ld      h, #0
         ret
 
 _gfx_flip::
         in      a, (#0xC9)
-        xor     #2
+        xor     #1
         out     (#0xC9), a
         ret
 

@@ -15,7 +15,7 @@
 
 /* ----- Video ----- */
 #define PORT_GFXMODE    0xC3    /* Graphics mode: 00=ZX, 01=320x256x8, 10=640x256x4 */
-#define PORT_RGMOD      0xC9    /* Double buffer flip, screen on/off */
+#define PORT_RGMOD      0xC9    /* bit 0: display buffer select, bit 1: optional screen off */
 #define PORT_PAL_ADDR   0x89    /* Palette address (PORT_Y) */
 #define PORT_PAL_DATA   0x89    /* Palette data */
 

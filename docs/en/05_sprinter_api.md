@@ -390,7 +390,7 @@ void video_safe_porty(void);
 
 - `video_setmode(mode)` switches the hardware video mode directly.
 - `video_getmode()` returns the current hardware mode byte.
-- `video_swap()` flips display pages for double buffering.
+- `video_swap()` flips display pages for double buffering through RGMOD bit 0.
 - `video_vsync()` waits for the next vertical retrace.
 - `video_setpal(index, r, g, b)` sets one palette entry using 8-bit RGB values (`0..255` each).
 - `video_setpal_range(first, count, colors)` sets a range of colors using 6-bit RGB values (`0..63`). `count` may be up to 255.

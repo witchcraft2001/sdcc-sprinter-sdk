@@ -390,7 +390,7 @@ void video_safe_porty(void);
 
 - `video_setmode(mode)` напрямую переключает аппаратный видеорежим.
 - `video_getmode()` возвращает текущий байт аппаратного режима.
-- `video_swap()` меняет отображаемую страницу для double buffering.
+- `video_swap()` меняет отображаемую страницу для double buffering через бит 0 RGMOD.
 - `video_vsync()` ждёт следующий vertical retrace.
 - `video_setpal(index, r, g, b)` задаёт один цвет палитры через 8-битные RGB-компоненты (`0..255`).
 - `video_setpal_range(first, count, colors)` задаёт диапазон цветов через 6-битные RGB-компоненты (`0..63`). `count` может быть до 255.

@@ -7,6 +7,8 @@ BALLS_BMP  = /Users/dmitry/dev/zx/sprinter/evo_sdk/example_sprites/balls.bmp
 
 include ../common.mk
 
+all: balls.gfx
+
 $(BUILD)/main.rel: res.h
 
 res.h balls.gfx: $(SDK_DIR)tools/bmp2gfx.py $(PIC1_BMP) $(BALLS_BMP)
