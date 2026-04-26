@@ -379,6 +379,8 @@ void outp(u16 port, u8 value);
 void video_setmode(u8 mode);
 u8   video_getmode(void);
 void video_swap(void);
+void video_sync_enable(void);
+void video_sync_disable(void);
 void video_vsync(void);
 void video_setpal(u8 index, u8 r, u8 g, u8 b);
 void video_setpal_range(u8 first, u16 count, const video_rgb6_t *colors);
@@ -389,9 +391,16 @@ void video_safe_porty(void);
 ```
 
 - `video_setmode(mode)` switches the hardware video mode directly.
+  Switching to a text mode also disables the hardware sync source.
 - `video_getmode()` returns the current hardware mode byte.
 - `video_swap()` flips display pages for double buffering through RGMOD bit 0.
-- `video_vsync()` waits for the next vertical retrace.
+- `video_sync_enable()` enables the Sprinter hardware sync source used by `video_vsync()`.
+- `video_sync_disable()` disables that sync source again.
+- `video_vsync()` enables the hardware sync source through Sprinter port `#004E`, then waits for
+  the `#FFFE` bit 5 low-to-high transition. If the sync bit is unavailable, it
+  falls back to one interrupt wait instead of hanging. The sync source remains enabled for
+  subsequent frames and is disabled again by `video_setmode(VMODE_TEXT*)` or
+  `dss_exit()`.
 - `video_setpal(index, r, g, b)` sets one palette entry using 8-bit RGB values (`0..255` each).
 - `video_setpal_range(first, count, colors)` sets a range of colors using 6-bit RGB values (`0..63`). `count` may be up to 255.
 - `video_setpal_range8(first, count, colors)` sets a range of colors using 8-bit RGB values (`0..255`) and scales them to the hardware range.
@@ -515,6 +524,7 @@ Port constants for direct use with `inp()` and `outp()`:
 | `PORT_RGMOD` | 0xC9 | Display page / double-buffer control |
 | `PORT_PAL_ADDR` | 0x89 | Palette address |
 | `PORT_PAL_DATA` | 0x89 | Palette data |
+| `PORT_CBL_DIR` | 0x004E | CBL/Covox-Blaster control; 16-bit port, use `OUT (C),A` |
 
 ### Sound
 

@@ -56,7 +56,13 @@ u8 video_getmode(void) SPRINTER_NAKED_DECL;
 /** Swap display buffers (double buffering via RGMOD port) */
 void video_swap(void) SPRINTER_NAKED_DECL;
 
-/** Wait for vertical sync */
+/** Enable the hardware sync source used by video_vsync() */
+void video_sync_enable(void) SPRINTER_NAKED_DECL;
+
+/** Disable the hardware sync source used by video_vsync() */
+void video_sync_disable(void) SPRINTER_NAKED_DECL;
+
+/** Wait for vertical sync using Sprinter CBL/#FFFE bit 5 when available */
 void video_vsync(void) SPRINTER_NAKED_DECL;
 
 /** Set palette entry.

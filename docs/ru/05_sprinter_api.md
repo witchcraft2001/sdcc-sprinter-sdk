@@ -379,6 +379,8 @@ void outp(u16 port, u8 value);
 void video_setmode(u8 mode);
 u8   video_getmode(void);
 void video_swap(void);
+void video_sync_enable(void);
+void video_sync_disable(void);
 void video_vsync(void);
 void video_setpal(u8 index, u8 r, u8 g, u8 b);
 void video_setpal_range(u8 first, u16 count, const video_rgb6_t *colors);
@@ -389,9 +391,16 @@ void video_safe_porty(void);
 ```
 
 - `video_setmode(mode)` напрямую переключает аппаратный видеорежим.
+  При переключении в текстовый режим также отключается аппаратный источник синхронизации.
 - `video_getmode()` возвращает текущий байт аппаратного режима.
 - `video_swap()` меняет отображаемую страницу для double buffering через бит 0 RGMOD.
-- `video_vsync()` ждёт следующий vertical retrace.
+- `video_sync_enable()` включает аппаратный источник синхронизации, используемый `video_vsync()`.
+- `video_sync_disable()` отключает этот источник синхронизации.
+- `video_vsync()` включает аппаратный источник синхронизации через порт Sprinter `#004E`, затем ждёт
+  переход бита 5 порта `#FFFE` из 0 в 1. Если sync-бит недоступен, функция
+  откатывается к ожиданию одного прерывания, чтобы не зависать. Источник
+  синхронизации остаётся включённым для следующих кадров и отключается при `video_setmode(VMODE_TEXT*)`
+  или `dss_exit()`.
 - `video_setpal(index, r, g, b)` задаёт один цвет палитры через 8-битные RGB-компоненты (`0..255`).
 - `video_setpal_range(first, count, colors)` задаёт диапазон цветов через 6-битные RGB-компоненты (`0..63`). `count` может быть до 255.
 - `video_setpal_range8(first, count, colors)` задаёт диапазон цветов через 8-битные RGB-компоненты (`0..255`) с масштабированием до аппаратного диапазона.
@@ -515,6 +524,7 @@ typedef struct {
 | `PORT_RGMOD` | 0xC9 | Страница отображения и double buffering |
 | `PORT_PAL_ADDR` | 0x89 | Адрес палитры |
 | `PORT_PAL_DATA` | 0x89 | Данные палитры |
+| `PORT_CBL_DIR` | 0x004E | Управление CBL/Covox-Blaster; 16-битный порт, использовать `OUT (C),A` |
 
 ### Звук
 

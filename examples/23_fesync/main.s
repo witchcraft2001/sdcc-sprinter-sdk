@@ -8,21 +8,21 @@ _main::
         call    puts
 
         xor     a               ; CBL off
-        out     (#0x89),a
+        call    set_cbl
         ld      hl,#msg_off
         call    puts
         call    sample_fe5
         call    print_results
 
         ld      a,#0x80         ; CBL on, 15 kHz mono
-        out     (#0x89),a
+        call    set_cbl
         ld      hl,#msg_on
         call    puts
         call    sample_fe5
         call    print_results
 
         xor     a               ; leave CBL disabled
-        out     (#0x89),a
+        call    set_cbl
 
         ld      hl,#msg_expect1
         call    puts
@@ -35,6 +35,11 @@ _main::
 
         ld      c,#0x30        ; DSS WaitKey
         rst     #0x10
+        ret
+
+set_cbl:
+        ld      bc,#0x004e      ; CBL_DIR, canonical 16-bit Sprinter port
+        out     (c),a
         ret
 
 sample_fe5:
@@ -161,7 +166,7 @@ msg_off:
         .ascii  "CBL off, sampling 32768 reads..."
         .db     13,10,0
 msg_on:
-        .ascii  "CBL on (#89=#80), sampling 32768 reads..."
+        .ascii  "CBL on (#004E=#80), sampling 32768 reads..."
         .db     13,10,0
 msg_low:
         .ascii  "LOW     = "
@@ -173,13 +178,13 @@ msg_trans:
         .ascii  "TRANS   = "
         .db     0
 msg_expect1:
-        .ascii  "Expected CBL off: HIGH=0000 TRANS=0000"
+        .ascii  "Expected CBL off: TRANS=0000"
         .db     13,10,0
 msg_expect2:
         .ascii  "Expected CBL on : LOW>0 HIGH>0 TRANS>0"
         .db     13,10,0
 msg_expect3:
-        .ascii  "MAME bug CBL off: LOW=0000, bit stuck high"
+        .ascii  "Bad symptom: CBL on has no LOW/HIGH transitions"
         .db     13,10,13,10,0
 msg_key:
         .ascii  "Press any key to exit..."

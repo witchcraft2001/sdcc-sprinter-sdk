@@ -18,6 +18,7 @@
 #define PORT_RGMOD      0xC9    /* bit 0: display buffer select, bit 1: optional screen off */
 #define PORT_PAL_ADDR   0x89    /* Palette address (PORT_Y) */
 #define PORT_PAL_DATA   0x89    /* Palette data */
+#define PORT_CBL_DIR    0x004E  /* CBL/Covox-Blaster control, 16-bit port: use OUT (C),A */
 
 /* ----- VRAM Pages ----- */
 /* Page format: 0x5X where X = %TSPP
