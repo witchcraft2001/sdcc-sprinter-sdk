@@ -153,16 +153,16 @@ void main(void) {
         return;
     }
 
-    /* Map it into WIN0 (0x0000-0x3FFF) */
-    dss_setwin(0, page);
+    /* Map it into WIN3 (0xC000-0xFFFF) */
+    dss_setwin(3, page);
 
-    /* Now 0x0000-0x3FFF points to the new page */
+    /* Now 0xC000-0xFFFF points to the new page */
     /* Write data directly to addresses in that range */
-    *((u8 *)0x0000) = 42;
+    *((u8 *)0xC000) = 42;
 
     /* Free the page when done */
     dss_freemem(page);
 }
 ```
 
-**Warning:** Do not map pages over WIN2 (code) or WIN1 (data) while your program is running, as this will crash the system. Use WIN0 or WIN3 for extra data pages.
+**Warning:** Do not map pages over WIN2 (code) or WIN1 (data) while your program is running, as this will crash the system. Use WIN3 only when your stack/data layout leaves it free.

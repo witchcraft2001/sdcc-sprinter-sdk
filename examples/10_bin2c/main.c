@@ -20,6 +20,7 @@ static char *next_arg(char **pp) {
 
 static void copy_arg(char *dst, const char *src, u16 dst_size) {
     u16 i = 0;
+    char c;
 
     if (!dst_size) return;
     if (!src) {
@@ -28,7 +29,9 @@ static void copy_arg(char *dst, const char *src, u16 dst_size) {
     }
 
     while (src[i] && (i + 1) < dst_size) {
-        dst[i] = src[i];
+        c = src[i];
+        if (c >= 'a' && c <= 'z') c -= ('a' - 'A');
+        dst[i] = c;
         i++;
     }
     dst[i] = '\0';

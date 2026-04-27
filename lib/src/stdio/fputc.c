@@ -17,6 +17,10 @@ int fputc(int c, FILE *fp) {
         *_sprintf_ptr++ = (char)c;
     } else {
         u8 ch = (u8)c;
+        if ((fp->flags & _F_APPEND) && dss_seek(fp->fd, 0UL, SEEK_END) < 0) {
+            fp->flags |= _F_ERR;
+            return EOF;
+        }
         if (dss_write(fp->fd, &ch, 1) < 0) {
             fp->flags |= _F_ERR;
             return EOF;

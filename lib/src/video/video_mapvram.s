@@ -8,8 +8,15 @@ _video_mapvram::
         ld      iy, #4
         add     iy, sp
         ld      a, 0 (iy)
-        ld      b, 1 (iy)
-        ld      c, #0x38
-        rst     #0x10
+        and     #0x03
+        rlca
+        rlca
+        rlca
+        rlca
+        rlca
+        add     a, #0x82
+        ld      c, a
+        ld      a, 1 (iy)
+        out     (c), a
         pop     ix
         ret

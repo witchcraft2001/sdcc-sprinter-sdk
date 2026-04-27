@@ -5,6 +5,10 @@
 
 _dss_gettime::
         push    ix
+        ld      iy, #4
+        add     iy, sp
+        ld      l, 0 (iy)
+        ld      h, 1 (iy)
         push    hl
         ld      c, #0x21
         rst     #0x10

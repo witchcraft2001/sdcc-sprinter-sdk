@@ -18,6 +18,8 @@
         .globl  l__INITIALIZER
         .globl  s__INITIALIZED
         .globl  s__INITIALIZER
+        .globl  l__DATA
+        .globl  s__DATA
         .globl  l__BSS
         .globl  s__BSS
 
@@ -26,13 +28,15 @@
         .area   _CODE
 
 _entry::
-        ; Save command line pointer (IX from DSS)
+        ; Preserve command line pointer (IX from DSS) across runtime init.
         push    ix
-        pop     hl
-        ld      (__cmdline), hl
 
         ; Initialize global/static variables
         call    gsinit
+
+        ; Save command line pointer after DATA clear/init.
+        pop     hl
+        ld      (__cmdline), hl
 
         ; Call main()
         call    _main
@@ -59,6 +63,26 @@ _entry::
         ; ----- Global initialization -----
         .area   _GSINIT
 gsinit::
+        ; SDCC 2.9 places uninitialized globals/statics in DATA.
+        ; Clear DATA first; generated GSINIT code restores initialized values.
+        ld      hl, #s__DATA
+        ld      bc, #l__DATA
+        ld      a, b
+        or      a, c
+        jr      z, gsinit_copy_init
+
+        ld      (hl), #0
+        dec     bc
+        ld      a, b
+        or      a, c
+        jr      z, gsinit_copy_init
+
+        ld      d, h
+        ld      e, l
+        inc     de
+        ldir
+
+gsinit_copy_init:
         ; Copy INITIALIZER -> INITIALIZED (initialized globals)
         ld      bc, #l__INITIALIZER
         ld      a, b

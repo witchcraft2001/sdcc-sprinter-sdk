@@ -26,6 +26,7 @@
 #define _F_EOF      0x04
 #define _F_ERR      0x08
 #define _F_OPEN     0x10
+#define _F_APPEND   0x20
 
 typedef struct _FILE {
     unsigned char fd;           /* DSS handle (0-9), 0xFF = console */
