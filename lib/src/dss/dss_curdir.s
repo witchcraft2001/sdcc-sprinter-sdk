@@ -10,6 +10,7 @@ _dss_curdir::
         ld      l, 0 (iy)
         ld      h, 1 (iy)
         ld      c, #0x1E
+        or      a
         rst     #0x10
         pop     ix
         jr      c, _dss_curdir_err_290

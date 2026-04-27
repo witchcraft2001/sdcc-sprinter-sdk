@@ -65,6 +65,36 @@ static void test_time_wrappers(void) {
     check(t.hour < 24 && t.minute < 60 && t.second < 60 && t.hundredths == 0, "dss_gettime");
 }
 
+static void test_dir_wrappers(void) {
+    static char cwd[128];
+    char *last;
+    i16 rc;
+
+    memset(cwd, 0xAA, sizeof(cwd));
+    rc = dss_curdir(cwd);
+    check(rc == 0 && cwd[0] == '\\' && cwd[sizeof(cwd) - 1] == (char)0xAA, "dss_curdir");
+
+    dss_chdir("\\");
+    dss_rmdir("WRAPDIR");
+    rc = dss_mkdir("WRAPDIR");
+    check(rc == 0, "dss_mkdir");
+    if (rc != 0) return;
+
+    rc = dss_chdir("WRAPDIR");
+    check(rc == 0, "dss_chdir");
+    if (rc == 0) {
+        memset(cwd, 0, sizeof(cwd));
+        rc = dss_curdir(cwd);
+        last = strrchr(cwd, '\\');
+        check(rc == 0 && last != (char *)0 && strcmp(last + 1, "WRAPDIR") == 0, "curdir changed");
+    }
+
+    rc = dss_chdir("\\");
+    check(rc == 0, "dss_chdir root");
+    rc = dss_rmdir("WRAPDIR");
+    check(rc == 0, "dss_rmdir");
+}
+
 static void test_mem_video_wrappers(void) {
     u16 total = 0;
     u16 free_pages = 0;
@@ -110,6 +140,7 @@ void main(void) {
 
     test_file_wrappers();
     test_time_wrappers();
+    test_dir_wrappers();
     test_mem_video_wrappers();
     test_video_mode_wrapper();
 
