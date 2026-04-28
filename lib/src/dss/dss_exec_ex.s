@@ -20,6 +20,9 @@ _dss_exec_ex::
         ld      e, -2 (iy)
         ld      d, -1 (iy)
         ld      (_dss_exec_ex_saved_ret), de
+        ld      de, #_dss_exec_ex_done_290
+        ld      -2 (iy), e
+        ld      -1 (iy), d
         ld      l, 0 (iy)
         ld      h, 1 (iy)
         ld      e, 2 (iy)
@@ -29,6 +32,13 @@ _dss_exec_ex::
         ld      b, #0
         ld      c, #0x40
         rst     #0x10
+        ld      hl, (_dss_exec_ex_saved_ret)
+        ex      (sp), hl
+        jr      _dss_exec_ex_return_290
+_dss_exec_ex_done_290:
+        ld      de, (_dss_exec_ex_saved_ret)
+        push    de
+_dss_exec_ex_return_290:
         ld      ix, (_dss_exec_ex_saved_ix)
         ld      iy, (_dss_exec_ex_saved_iy)
         ld      de, (_dss_exec_ex_errptr)
@@ -42,8 +52,6 @@ _dss_exec_ex::
 _dss_exec_ex_ok_ret_290:
         ld      l, b
         ld      h, #0
-        ld      de, (_dss_exec_ex_saved_ret)
-        push    de
         ret
 _dss_exec_ex_err_290:
         ld      b, a

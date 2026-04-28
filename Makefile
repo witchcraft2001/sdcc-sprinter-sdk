@@ -47,6 +47,7 @@ LIB_C_OBJS   = $(LIB_C_RELS:.rel=.o)
 LIB_ASM_RELS = $(patsubst %.s,$(BUILD_DIR)/%.rel,$(notdir $(LIB_ASM_SRCS) $(LIB_EXTRA_ASM_SRCS)))
 LIB_ASM_OBJS = $(LIB_ASM_RELS:.rel=.o)
 CRT0_REL     = $(BUILD_DIR)/crt0.rel
+CRT0_PAGE2_REL = $(BUILD_DIR)/crt0_page2.rel
 SPRINTER_LIB = $(BUILD_DIR)/sprinter.lib
 
 GFX_C_SRCS    = $(wildcard $(GFX_SRC_DIR)/*.c)
@@ -85,6 +86,10 @@ $(CRT0_REL): $(LIB_DIR)/crt0.s | $(BUILD_DIR)
 	$(SDASZ80) $(SDASZ_FLAGS) $(CRT0_REL) $<
 	cp $(CRT0_REL) $(basename $(CRT0_REL)).o
 
+$(CRT0_PAGE2_REL): $(LIB_DIR)/crt0_page2.s | $(BUILD_DIR)
+	$(SDASZ80) $(SDASZ_FLAGS) $(CRT0_PAGE2_REL) $<
+	cp $(CRT0_PAGE2_REL) $(basename $(CRT0_PAGE2_REL)).o
+
 $(BUILD_DIR)/%.rel: %.s | $(BUILD_DIR)
 	$(SDASZ80) $(SDASZ_FLAGS) $@ $<
 	cp $@ $(basename $@).o
@@ -108,10 +113,11 @@ $(GFX_LIB): $(GFX_C_RELS) $(GFX_ASM_RELS)
 	$(SDAR) r $@ $(GFX_LIB_INPUTS)
 
 # --- Build library ---
-lib: $(CRT0_REL) $(SPRINTER_LIB)
+lib: $(CRT0_REL) $(CRT0_PAGE2_REL) $(SPRINTER_LIB)
 	@echo ""
 	@echo "=== SDK Library Built ==="
 	@echo "CRT0: $(CRT0_REL)"
+	@echo "CRT0 page2: $(CRT0_PAGE2_REL)"
 	@echo "Library: $(SPRINTER_LIB) ($(shell expr $(words $(LIB_C_RELS)) + $(words $(LIB_ASM_RELS))) modules)"
 
 gfx: lib $(GFX_LIB)

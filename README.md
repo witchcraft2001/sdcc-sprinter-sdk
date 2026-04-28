@@ -225,6 +225,19 @@ include $(SDK_DIR)examples/common.mk
 | Default (SOLID C compatible) | `0x4100` | `0xBFFF` | ~32 KB (WIN1+WIN2) |
 | Compact | `0x8100` | `0xBFFF` | ~16 KB (WIN2 only) |
 | Extended | `0x4100` | `0xFFFE` | ~32 KB code + WIN3 for stack |
+| Page2 (`CRT0_PAGE2=1`) | `0x4200` | `0x40FF` (bootstrap) | code in WIN1; CRT0 allocates WIN2 page at runtime, working stack at `0xBFFF` |
+
+`CRT0_PAGE2=1` selects an alternative CRT0 (`lib/crt0_page2.s`) that calls `DSS.GETMEM` + `DSS.SETWIN2` before `main()`, so WIN2 is a runtime-allocated page rather than part of the EXE image. Use it when **(a)** you want to keep the on-disk EXE small (code + initialised data fit in WIN1, ≤ ~15.5 KB), or **(b)** the program needs a contiguous 32 KB workspace at `0x8000-0xFFFF` (WIN2+WIN3) free of code and initialised data. To enable, add a single line to your project Makefile **before** `include`:
+
+```makefile
+APP        = small
+SRCS       = main.c
+SDK_DIR    = ../../
+CRT0_PAGE2 = 1
+include $(SDK_DIR)examples/common.mk
+```
+
+See [docs/en/08_memory_and_linking.md](docs/en/08_memory_and_linking.md) for the full layout, examples, and remap notes.
 
 DSS allocates 3 memory pages for each program (WIN1, WIN2, WIN3), so all addresses in `0x4000-0xFFFF` are valid. The Sprinter has 4 MB RAM total — for programs needing more than 32 KB, use `dss_getmem()` and `dss_setwin()` for page banking.
 
@@ -476,7 +489,8 @@ sdcc-sprinter-sdk/
 │       ├── video.h         # Video mode control
 │       └── mouse.h         # Mouse driver
 ├── lib/
-│   ├── crt0.s              # C runtime startup
+│   ├── crt0.s              # C runtime startup (default layout)
+│   ├── crt0_page2.s        # CRT0 variant: allocates WIN2 page at startup
 │   └── src/
 │       ├── dss/            # DSS wrappers
 │       ├── bios/           # BIOS wrappers (6 modules)
@@ -499,6 +513,7 @@ sdcc-sprinter-sdk/
 │   ├── 01_hello/ .. 19_console/
 ├── build/
 │   ├── crt0.rel            # Compiled CRT0
+│   ├── crt0_page2.rel      # Compiled page2 CRT0
 │   └── sprinter.lib        # Library archive
 └── scripts/                # Local helper scripts (not part of the repository)
 ```
@@ -521,6 +536,8 @@ The SDK targets the default ABI of SDCC 2.9.0:
 ### DSS System Calls
 
 All DSS calls go through `RST #10` with function number in C register. IX is saved/restored around every call (DSS may clobber it).
+
+DSS leaves the caller's return address intact on the stack across `RST #10`, so the wrappers (e.g. `dss_chdir.s`, `dss_call.s`) just `ret` after the call. This applies to `dss_exec` / `dss_exec_ex` too: even after a successful `EXEC`, DSS restores the parent SP so the caller's return address is exactly where it was before the call. Earlier versions of these two wrappers cached the return address and re-pushed it on return — that double-counted it and silently leaked 2 stack bytes per successful exec, which surfaced as crashes after sequential exec calls (e.g. inside `make`). Both wrappers now use the same plain-`ret` convention as the rest of the DSS bindings.
 
 ## Based On
 
