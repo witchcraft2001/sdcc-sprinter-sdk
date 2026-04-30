@@ -132,9 +132,11 @@ void main(void) {
 ### Управление памятью
 
 ```c
-void dss_setwin(u8 win, u8 page);   /* Подключить страницу к окну */
-u8   dss_getmem(void);              /* Выделить страницу (или 0xFF) */
-void dss_freemem(u8 page);          /* Освободить страницу */
+void dss_setwin(u8 win, u8 block);  /* Подключить первую страницу блока к окну 1-3 */
+void dss_setwin_page(u8 win, u8 block, u8 page_in_block);
+u8   dss_getmem(void);              /* Выделить блок из 1 страницы (или 0xFF) */
+u8   dss_getmem_pages(u8 pages);    /* Выделить многостраничный блок */
+void dss_freemem(u8 block);         /* Освободить блок */
 ```
 
 ### Дата и время

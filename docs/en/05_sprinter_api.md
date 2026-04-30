@@ -185,9 +185,11 @@ typedef struct {
 ### Memory Management
 
 ```c
-void dss_setwin(u8 win, u8 page);   /* Map RAM page into window 0-3 */
-u8   dss_getmem(void);              /* Allocate page, returns page# or 0xFF */
-void dss_freemem(u8 page);          /* Free allocated page */
+void dss_setwin(u8 win, u8 block);  /* Map first page of block into window 1-3 */
+void dss_setwin_page(u8 win, u8 block, u8 page_in_block);
+u8   dss_getmem(void);              /* Allocate 1-page block, returns block id or 0xFF */
+u8   dss_getmem_pages(u8 pages);    /* Allocate multi-page block */
+void dss_freemem(u8 block);         /* Free allocated block */
 ```
 
 ### Process Control

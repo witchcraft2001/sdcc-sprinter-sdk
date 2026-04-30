@@ -51,7 +51,7 @@ STACK    = 0xBFFF
 | Compact | `0x8100` | `0xBFFF` | ~16 KB |
 | Extended | `0x4100` | `0xFFFE` | ~32 KB + WIN3 stack |
 
-The Sprinter has **4 MB RAM** (256 × 16 KB pages). For programs needing more than 32 KB, use `dss_getmem()` and `dss_setwin()` to map additional pages. SDCC also supports banked code via `--codeseg`.
+The Sprinter has **4 MB RAM** (256 × 16 KB pages). For programs needing more than 32 KB, use `dss_getmem_pages()` and `dss_setwin_page()` to map pages from an allocated DSS block. SDCC also supports banked code via `--codeseg`.
 
 ## CRT0: C Runtime Startup
 
@@ -144,25 +144,25 @@ For programs that need more than 32 KB of data (16 KB code + 16 KB data), you ca
 #include <sprinter.h>
 
 void main(void) {
-    u8 page;
+    u8 block;
 
-    /* Allocate a memory page */
-    page = dss_getmem();
-    if (page == 0xFF) {
+    /* Allocate a 2-page block */
+    block = dss_getmem_pages(2);
+    if (block == 0xFF) {
         dss_puts("Out of memory!\r\n");
         return;
     }
 
-    /* Map it into WIN0 (0x0000-0x3FFF) */
-    dss_setwin(0, page);
+    /* Map page 1 of the block into WIN3 (0xC000-0xFFFF) */
+    dss_setwin_page(3, block, 1);
 
-    /* Now 0x0000-0x3FFF points to the new page */
+    /* Now 0xC000-0xFFFF points to that block page */
     /* Write data directly to addresses in that range */
-    *((u8 *)0x0000) = 42;
+    *((u8 *)0xC000) = 42;
 
-    /* Free the page when done */
-    dss_freemem(page);
+    /* Free the whole block when done */
+    dss_freemem(block);
 }
 ```
 
-**Warning:** Do not map pages over WIN2 (code) or WIN1 (data) while your program is running, as this will crash the system. Use WIN0 or WIN3 for extra data pages.
+**Warning:** Do not map pages over WIN2 (code) or WIN1 (data) while your program is running, as this will crash the system. WIN0 is reserved by DSS; use WIN3 for extra data pages.

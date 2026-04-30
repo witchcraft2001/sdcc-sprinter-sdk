@@ -44,11 +44,24 @@
 #define BIOS_EMM_NEXT   0xC7    /* Get next page */
 
 /* Disk (low-level) */
-#define BIOS_DISK_RESET 0x51    /* Reset disk controller */
-#define BIOS_DISK_READ  0x53    /* Read sectors */
-#define BIOS_DISK_WRITE 0x54    /* Write sectors */
-#define BIOS_DISK_DET   0x57    /* Detect disk */
-#define BIOS_DISK_PAR   0x58    /* Get disk parameters */
+#define BIOS_DRV_RESET       0x51    /* Reset disk controller */
+#define BIOS_DRV_READ_LONG   0x52    /* Long-form sector read */
+#define BIOS_DRV_WRITE_LONG  0x53    /* Long-form sector write */
+#define BIOS_DRV_VERIFY      0x54    /* Verify sectors */
+#define BIOS_DRV_READ        0x55    /* Short sector read, 1..255 sectors */
+#define BIOS_DRV_WRITE       0x56    /* Short sector write, 1..255 sectors */
+#define BIOS_DRV_DETECT      0x57    /* Detect disk */
+#define BIOS_DRV_GET_PAR     0x58    /* Get disk parameters */
+#define BIOS_DRV_SET_PAR     0x59    /* Set disk parameters */
+#define BIOS_DRV_VERSION     0x5A    /* Disk driver specification version */
+#define BIOS_DRV_EXTENDED    0x5E    /* Extended driver calls */
+#define BIOS_DRV_LIST        0x5F    /* List drives */
+
+#define BIOS_DISK_RESET      BIOS_DRV_RESET
+#define BIOS_DISK_READ       BIOS_DRV_READ
+#define BIOS_DISK_WRITE      BIOS_DRV_WRITE
+#define BIOS_DISK_DET        BIOS_DRV_DETECT
+#define BIOS_DISK_PAR        BIOS_DRV_GET_PAR
 
 /* Service */
 #define BIOS_BOARD_ID   0xED    /* Get board ID */
@@ -76,6 +89,12 @@ u16 bios_version(void);
 
 /** Get board/Sprinter type */
 u8 bios_board_id(void);
+
+/** Read 1..255 sectors via BIOS DRV_READ. Returns 0 or BIOS error code. */
+u8 bios_drv_read(u8 disk, u32 lba, void *dst, u8 count);
+
+/** Write 1..255 sectors via BIOS DRV_WRITE. Returns 0 or BIOS error code. */
+u8 bios_drv_write(u8 disk, u32 lba, const void *src, u8 count);
 
 /** Read I/O port */
 u8 inp(u16 port);

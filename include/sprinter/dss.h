@@ -289,17 +289,23 @@ void dss_settime(dss_date_t *d, dss_time_t *t);
 
 /* --- Memory --- */
 
-/** Set memory window page.
- *  win: 0-3 (memory window number)
- *  page: RAM page number
+/** Set memory window to the first page of a DSS memory block.
+ *  win: 1-3 (memory window number; WIN0 is reserved by DSS)
+ *  block: DSS memory block id returned by dss_getmem() / dss_getmem_pages()
  */
-void dss_setwin(u8 win, u8 page);
+void dss_setwin(u8 win, u8 block);
 
-/** Allocate a memory page. Returns page number or 0xFF on error */
+/** Set memory window 1-3 to a logical page inside a DSS memory block. */
+void dss_setwin_page(u8 win, u8 block, u8 page_in_block);
+
+/** Allocate one memory page as a DSS block. Returns block id or 0xFF on error */
 u8 dss_getmem(void);
 
-/** Free a memory page */
-void dss_freemem(u8 page);
+/** Allocate pages contiguous DSS pages as one block. Returns block id or 0xFF */
+u8 dss_getmem_pages(u8 pages);
+
+/** Free a DSS memory block */
+void dss_freemem(u8 block);
 
 /** Get memory info: total and free page counts */
 void dss_meminfo(u16 *total, u16 *free_pages);
