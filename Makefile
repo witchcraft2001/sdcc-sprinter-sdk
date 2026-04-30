@@ -38,6 +38,7 @@ LIB_EXTRA_ASM_SRCS = \
 	$(LIB_DIR)/sdcc290_divulong.s \
 	$(LIB_DIR)/sdcc290_mod.s \
 	$(LIB_DIR)/sdcc290_modulong.s \
+	$(LIB_DIR)/sdcc290_mullong.s \
 	$(LIB_DIR)/sdcc290_mul.s \
 	$(LIB_DIR)/sdcc290_shift.s
 
