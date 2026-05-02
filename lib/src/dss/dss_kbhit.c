@@ -6,9 +6,10 @@ bool dss_kbhit(void) __naked {
         ld      c, #0x33
         rst     #0x10
         pop     ix
+        ld      hl, #0
         or      a
         ret     z
-        ld      a, #1
+        inc     l
         ret
     __endasm;
 }
