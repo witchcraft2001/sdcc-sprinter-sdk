@@ -16,11 +16,13 @@ bool dss_scankey(dss_key_t *key) __naked {
         ld      (hl), b
         inc     hl
         ld      (hl), c
+        ld      a, #1
         ld      hl, #1
         pop     ix
         ret
 no_key:
         pop     hl
+        xor     a
         ld      hl, #0
         pop     ix
         ret

@@ -1,5 +1,6 @@
 APP  = waitemm
 SRCS = main.c
+CRT0_PAGE2 = 1
 
 include ../common.mk
 

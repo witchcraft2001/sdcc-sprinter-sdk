@@ -6,9 +6,7 @@ u16 dss_call(u16 addr) __naked {
         ; sdcccall(1): addr -> HL
         push    ix          ; save SDCC frame pointer
         call    _dss_call_hl
-        ; called code returns value in DE (or HL for u16)
-        push    hl
-        pop     de          ; return value in DE (sdcccall u16 return)
+        ; called SDCC code returns u16 in DE
         pop     ix          ; restore frame pointer
         ret
 _dss_call_hl:

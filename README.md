@@ -196,8 +196,11 @@ include $(SDK_DIR)examples/common.mk
 | Default (SOLID C compatible) | `0x4100` | `0xBFFF` | ~32 KB (WIN1+WIN2) |
 | Compact | `0x8100` | `0xBFFF` | ~16 KB (WIN2 only) |
 | Extended | `0x4100` | `0xFFFE` | ~32 KB code + WIN3 for stack |
+| Page2 (`CRT0_PAGE2=1`) | `0x4200` | `0x40FF` bootstrap, then `0xBFFF` | code in WIN1; CRT0 allocates WIN2 for DATA/stack |
 
-DSS allocates 3 memory pages for each program (WIN1, WIN2, WIN3), so all addresses in `0x4000-0xFFFF` are valid. The Sprinter has 4 MB RAM total — for programs needing more than 32 KB, use `dss_getmem()` and `dss_setwin()` for page banking.
+`CRT0_PAGE2=1` is the safe layout for small programs that fit in WIN1 but still need a working stack in WIN2. DSS allocates process pages according to the loaded EXE image, not according to the stack address in the header. If a small `CODE_LOC=0x4100` program is shorter than 16 KB and still uses `STACK=0xBFFF`, WIN2 may not belong to the process; this breaks DSS task switching and `EXEC` return because the parent stack is not preserved. With `CRT0_PAGE2=1`, the EXE starts with a bootstrap stack at `0x40FF`, then `crt0_page2` calls `DSS.GETMEM` + `DSS.SETWIN2` and moves the working stack to `0xBFFF`.
+
+Use `CRT0_PAGE2=1` for examples or tools that call `dss_exec()` / `dss_wait()` and are small enough to fit entirely below `0x8000`. For larger programs, make sure the loaded image actually extends into the window that contains the stack, or choose a layout whose stack is inside allocated process memory. The Sprinter has 4 MB RAM total; for additional workspace, use `dss_getmem()` and `dss_setwin()` for page banking.
 
 ## Standard C Library
 
@@ -392,7 +395,7 @@ void main(void) {
 }
 ```
 
-`dss_call(addr)` saves/restores IX (SDCC frame pointer). `dss_callp(addr, param)` passes a parameter on the stack.
+`dss_call(addr)` saves/restores IX (SDCC frame pointer). `dss_callp(addr, param)` passes one `u16` parameter using the SDCC calling convention.
 
 ### Manual conversion
 

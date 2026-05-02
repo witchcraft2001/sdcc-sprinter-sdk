@@ -2,7 +2,7 @@
 
 ## Z80 Memory Map
 
-The Z80 has a 64 KB address space divided into four 16 KB windows. DSS allocates 3 pages (WIN1, WIN2, WIN3) for each program.
+The Z80 has a 64 KB address space divided into four 16 KB windows. DSS allocates pages for the loaded EXE image; a stack address in the EXE header does not by itself reserve that window for the process.
 
 ### Default Layout (CODE_LOC=0x4100, like SOLID C)
 
@@ -24,6 +24,8 @@ The Z80 has a 64 KB address space divided into four 16 KB windows. DSS allocates
 ```
 
 **Total code+data:** 0x4100–0xBFFF ≈ **32 KB** (WIN1 + WIN2).
+
+This layout is safe only when the loaded image actually reaches WIN2 or the program otherwise allocates WIN2 before using the stack there. A tiny `CODE_LOC=0x4100` program can fit entirely in WIN1 while still declaring `STACK=0xBFFF`; in that case DSS may not preserve WIN2 across `EXEC`, so parent-stack based APIs can return incorrectly.
 
 ### Compact Layout (CODE_LOC=0x8100)
 
@@ -50,8 +52,20 @@ STACK    = 0xBFFF
 | Default (SOLID C) | `0x4100` | `0xBFFF` | ~32 KB |
 | Compact | `0x8100` | `0xBFFF` | ~16 KB |
 | Extended | `0x4100` | `0xFFFE` | ~32 KB + WIN3 stack |
+| Page2 (`CRT0_PAGE2=1`) | `0x4200` | `0x40FF` bootstrap, then `0xBFFF` | code in WIN1; CRT0 allocates WIN2 |
+
+Use `CRT0_PAGE2=1` when a small program fits in WIN1 but needs a real process-owned stack in WIN2. The alternate CRT0 starts on the WIN1 bootstrap stack, calls `DSS.GETMEM` and `DSS.SETWIN2`, then switches `SP` to `0xBFFF`. This is required for small programs that call `dss_exec()` or `dss_wait()`, because DSS task switching restores only pages that belong to the process.
 
 The Sprinter has **4 MB RAM** (256 × 16 KB pages). For programs needing more than 32 KB, use `dss_getmem_pages()` and `dss_setwin_page()` to map pages from an allocated DSS block. SDCC also supports banked code via `--codeseg`.
+
+Example:
+
+```makefile
+APP        = small
+SRCS       = main.c
+CRT0_PAGE2 = 1
+include ../common.mk
+```
 
 ## CRT0: C Runtime Startup
 
@@ -62,6 +76,8 @@ The CRT0 (`lib/crt0.s`) is the first code that runs when DSS loads your program.
 3. **Call main()** -- after initialization, CRT0 calls `_main`. When `main()` returns, CRT0 calls `DSS.Exit` with the return code.
 
 The CRT0 must always be the first `.rel` file passed to the linker, so that `_entry` is placed at address 0x8100.
+
+`lib/crt0_page2.s` is the alternate startup used by `CRT0_PAGE2=1`. It must be linked with `CODE_LOC=0x4200` and `STACK=0x40FF`; after startup it allocates WIN2 and moves the working stack to `0xBFFF`.
 
 ## Selective Linking
 
