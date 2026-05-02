@@ -90,6 +90,9 @@ u16 bios_version(void);
 /** Get board/Sprinter type */
 u8 bios_board_id(void);
 
+/** Fill pages with physical pages for an EMM/DSS block. Returns page count. */
+u8 bios_emm_list(u8 block, u8 *pages);
+
 /** Read 1..255 sectors via BIOS DRV_READ. Returns 0 or BIOS error code. */
 u8 bios_drv_read(u8 disk, u32 lba, void *dst, u8 count);
 

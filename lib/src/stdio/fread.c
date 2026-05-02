@@ -4,13 +4,25 @@
 
 size_t fread(void *buf, size_t size, size_t count, FILE *fp) {
     size_t total = size * count;
+    unsigned char *p = (unsigned char *)buf;
+    size_t done = 0;
     i16 got;
-    if (total == 0 || !(fp->flags & _F_OPEN) || fp->fd == 0xFF)
+    if (total == 0 || !(fp->flags & _F_OPEN) || !(fp->flags & _F_READ) || fp->fd == 0xFF)
         return 0;
-    got = dss_read(fp->fd, buf, total);
+
+    if (fp->ungetc_buf != 0xFF) {
+        *p++ = fp->ungetc_buf;
+        fp->ungetc_buf = 0xFF;
+        done = 1;
+        total--;
+        if (total == 0)
+            return done / size;
+    }
+
+    got = dss_read(fp->fd, p, total);
     if (got <= 0) {
         fp->flags |= _F_EOF;
-        return 0;
+        return done / size;
     }
-    return (size_t)got / size;
+    return (done + (size_t)got) / size;
 }

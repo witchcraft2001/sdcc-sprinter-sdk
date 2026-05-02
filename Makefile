@@ -32,15 +32,19 @@ INCLUDE_DIR  = $(SDK_DIR)include
 
 # --- Source discovery (recursive, one function per file) ---
 LIB_SUBDIRS  = dss bios video mouse stdio stdlib string ctype conio dir
-LIB_C_SRCS   = $(foreach d,$(LIB_SUBDIRS),$(wildcard $(LIB_SRC_DIR)/$(d)/*.c))
-LIB_ASM_SRCS = $(LIB_DIR)/crt0.s
+LIB_WRAPPER_ASM_SRCS = $(foreach d,$(LIB_SUBDIRS),$(wildcard $(LIB_SRC_DIR)/$(d)/*.s))
+LIB_WRAPPER_ASM_BASENAMES = $(notdir $(basename $(LIB_WRAPPER_ASM_SRCS)))
+LIB_C_SRCS_ALL = $(foreach d,$(LIB_SUBDIRS),$(wildcard $(LIB_SRC_DIR)/$(d)/*.c))
+LIB_C_SRCS   = $(filter-out $(foreach b,$(LIB_WRAPPER_ASM_BASENAMES),$(LIB_SRC_DIR)/%/$(b).c),$(LIB_C_SRCS_ALL))
 
 # Flatten .rel names into BUILD_DIR (no subdirs in build/)
 LIB_C_RELS   = $(patsubst %.c,$(BUILD_DIR)/%.rel,$(notdir $(LIB_C_SRCS)))
+LIB_ASM_RELS = $(patsubst %.s,$(BUILD_DIR)/%.rel,$(notdir $(LIB_WRAPPER_ASM_SRCS)))
 CRT0_REL     = $(BUILD_DIR)/crt0.rel
+CRT0_PAGE2_REL = $(BUILD_DIR)/crt0_page2.rel
 
 # VPATH: let make find .c files in subdirectories
-VPATH = $(sort $(dir $(LIB_C_SRCS)))
+VPATH = $(sort $(dir $(LIB_C_SRCS) $(LIB_WRAPPER_ASM_SRCS)))
 
 # =========================================================================
 .PHONY: all lib examples clean install tools help
@@ -62,22 +66,29 @@ $(BUILD_DIR):
 $(CRT0_REL): $(LIB_DIR)/crt0.s | $(BUILD_DIR)
 	$(SDASZ80) $(SDASZ_FLAGS) $(CRT0_REL) $<
 
+$(CRT0_PAGE2_REL): $(LIB_DIR)/crt0_page2.s | $(BUILD_DIR)
+	$(SDASZ80) $(SDASZ_FLAGS) $(CRT0_PAGE2_REL) $<
+
 # --- Library .c → .rel (VPATH finds sources in subdirs) ---
 $(BUILD_DIR)/%.rel: %.c | $(BUILD_DIR)
 	$(SDCC) $(SDCC_CFLAGS) -c -o $@ $<
 
+$(BUILD_DIR)/%.rel: %.s | $(BUILD_DIR)
+	$(SDASZ80) $(SDASZ_FLAGS) $@ $<
+
 # --- Library archive (for selective linking) ---
 SPRINTER_LIB = $(BUILD_DIR)/sprinter.lib
 
-$(SPRINTER_LIB): $(LIB_C_RELS)
+$(SPRINTER_LIB): $(LIB_C_RELS) $(LIB_ASM_RELS)
 	sdar rc $@ $^
 
 # --- Build library ---
-lib: $(CRT0_REL) $(SPRINTER_LIB)
+lib: $(CRT0_REL) $(CRT0_PAGE2_REL) $(SPRINTER_LIB)
 	@echo ""
 	@echo "=== SDK Library Built ==="
 	@echo "CRT0: $(CRT0_REL)"
-	@echo "Library: $(SPRINTER_LIB) ($(words $(LIB_C_RELS)) modules)"
+	@echo "CRT0 page2: $(CRT0_PAGE2_REL)"
+	@echo "Library: $(SPRINTER_LIB) ($(shell expr $(words $(LIB_C_RELS)) + $(words $(LIB_ASM_RELS))) modules)"
 
 # --- Build all examples ---
 examples: lib

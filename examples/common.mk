@@ -13,14 +13,21 @@ SDCC        ?= sdcc
 PYTHON      ?= python3
 
 # --- Memory layout defaults (32KB: WIN1+WIN2, like SOLID C) ---
+ifeq ($(CRT0_PAGE2),1)
+CODE_LOC    ?= 0x4200
+STACK       ?= 0x40FF
+CRT0_NAME   ?= crt0_page2
+else
 CODE_LOC    ?= 0x4100
 STACK       ?= 0xBFFF
+CRT0_NAME   ?= crt0
+endif
 
 BUILD       = _build
 SDCC_TARGET = -mz80
 SDCC_FLAGS  = $(SDCC_TARGET) --max-allocs-per-node 5000 --opt-code-speed
 INC         = -I$(SDK_DIR)include
-CRT0        = $(SDK_DIR)build/crt0.rel
+CRT0        = $(SDK_DIR)build/$(CRT0_NAME).rel
 SPRLIB      = $(SDK_DIR)build/sprinter.lib
 
 APP_RELS    = $(patsubst %.c,$(BUILD)/%.rel,$(SRCS))

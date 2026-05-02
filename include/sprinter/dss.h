@@ -341,6 +341,9 @@ i16 dss_exec(const char *path);
  */
 i16 dss_exec_ex(const char *path, u8 *err);
 
+/** Get exit code of the last EXEC'ed child from DSS ERLEVEL */
+u8 dss_wait(void);
+
 /** Get pointer to saved command line */
 char *dss_cmdline(void);
 

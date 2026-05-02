@@ -37,8 +37,8 @@ _entry::
         ; Call main()
         call    _main
 
-        ; main() returned — exit with return code in L
-        ld      b, l
+        ; main() returned - SDCC 4.x int return value is in DE.
+        ld      b, e
         ld      c, #0x41        ; DSS.Exit
         rst     #0x10
         ; (does not return)
