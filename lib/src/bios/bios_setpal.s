@@ -10,7 +10,7 @@ _bios_setpal::
         ld      hl,#-4
         add     hl,sp
         ld      sp,hl
-        ld      a,5(ix)
+        ld      a,7(ix)
         add     a,a
         add     a,a
         ld      -4(ix),a
@@ -18,7 +18,7 @@ _bios_setpal::
         add     a,a
         add     a,a
         ld      -3(ix),a
-        ld      a,7(ix)
+        ld      a,5(ix)
         add     a,a
         add     a,a
         ld      -2(ix),a
