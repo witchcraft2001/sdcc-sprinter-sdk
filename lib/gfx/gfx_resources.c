@@ -1,4 +1,5 @@
 #include <sprinter/gfx.h>
+#include <sprinter/assets.h>
 #include <sprinter/dss.h>
 #include <sprinter/bios.h>
 #include <sprinter/ports.h>
@@ -43,35 +44,10 @@ static u8 gfx_cache_resource_pages(u8 block, u8 page_count) {
 }
 
 i16 gfx_load_resource_pages(const char *path, u8 first_page, u8 page_count) {
-    i16 fd;
-    i16 n;
     i16 loaded;
-    u8 old_page;
-    u8 page;
 
-    fd = dss_open(path, O_RDONLY);
-    if (fd < 0) return -1;
-
-    old_page = inp(PORT_WIN3);
-    loaded = 0;
-    page = 0;
-
-    while (page_count) {
-        dss_setwin_page(3, first_page, page);
-        n = dss_read((u8)fd, (void *)0xC000, 0x4000);
-        if (n < 0) {
-            outp(PORT_WIN3, old_page);
-            dss_close((u8)fd);
-            return -1;
-        }
-        if (n > 0) loaded++;
-        if (n < 0x4000) break;
-        page++;
-        page_count--;
-    }
-
-    outp(PORT_WIN3, old_page);
-    dss_close((u8)fd);
+    loaded = asset_load_pages(path, first_page, page_count);
+    if (loaded < 0) return -1;
     if (!gfx_cache_resource_pages(first_page, (u8)loaded)) return -1;
     return loaded;
 }

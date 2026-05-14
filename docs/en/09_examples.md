@@ -205,11 +205,15 @@ Shows resource preparation through `tools/png2gfx.py`, generated `.gfx` and `res
 
 Expected output: a black graphics screen with two X/cross sprites loaded from `GFXDEMO.GFX`. The example flips to the copied graphics screen after drawing, then flips back on the next key press.
 
+With `PACK_ASSETS=1`, `GFXDEMO.GFX` is written as an SDK `SPK1` packed resource and is unpacked transparently by `gfx_load_resource_pages()`.
+
 **Demonstrates:** `gfx_load_resource_pages()`, `gfx_draw_resource()`, `gfx_resource_t`, generated PNG resources, external `EXTRA_LIBS`.
 
 ### 22_balls -- Animated Balls (~7 KB + `.gfx`)
 
 Demonstrates masked 16x16 sprites, a loaded bitmap background, DRAM-mirror restore, and double buffering.
+
+With `PACK_ASSETS=1`, `BALLS.GFX` is packed at build time and loaded through the same runtime path.
 
 ### 23_fesync -- FE Sync Probe (~1 KB)
 
@@ -218,6 +222,8 @@ Diagnostic DSS EXE for checking the Sprinter `#FE.5`/CBL sync bit on real hardwa
 ### 24_ppong -- Pong Mini-Game (~9 KB + `.gfx` + `.pt3`)
 
 Human-vs-computer Pong-style demo using a loaded 320x256 background, 16x16 ball sprite, segmented paddle sprites, 16x16 bitmap font resources, double buffering, AY/PT3 music from the example's local resource, cursor up/down controls, and ESC to exit. On exit it mutes music through `ay_pt3_mute()`, then frees both graphics and music DSS blocks.
+
+With `PACK_ASSETS=1`, both `PPONG.GFX` and `PPONG.PT3` are packed. Graphics are unpacked through `gfx_load_resource_pages()`, and the music image is unpacked through `asset_load_pages()`.
 
 ### 25_gfxblit -- Accelerated Blit/Scroll Test (~4 KB)
 

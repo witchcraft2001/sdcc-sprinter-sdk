@@ -140,6 +140,20 @@ scripts/make_floppy.sh
 scripts/deploy_img_local.sh
 ```
 
+To test packed runtime resources:
+
+```sh
+make examples SDCC290_BIN_DIR=/Users/dmitry/dev/zx/sdcc2 PACK_ASSETS=1
+scripts/make_floppy.sh
+scripts/deploy_img_local.sh
+```
+
+With `PACK_ASSETS=1`, `PPONG.GFX` and `PPONG.PT3` keep their DOS 8.3 names but
+contain SDK `SPK1` containers. The build packs 16 KB chunks with the local
+`mhmt -hst -zxh` tool and verifies each chunk with `mhmt -d`. Runtime loading is
+transparent: graphics use `gfx_load_resource_pages()`, and the PT3 player image
+uses `asset_load_pages()`.
+
 The deployed files on the target image are `PPONG.EXE`, `PPONG.GFX`, and
 `PPONG.PT3`.
 

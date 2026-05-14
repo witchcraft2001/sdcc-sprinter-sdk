@@ -88,6 +88,17 @@ This compiles all library modules into `build/sprinter.lib` (archive with select
 make examples
 ```
 
+Examples that generate runtime resources can optionally pack those files with
+the HRUST-compatible `mhmt` tool from the local `kode` tree:
+
+```bash
+make examples PACK_ASSETS=1
+```
+
+Packed files keep the same DOS 8.3 runtime names such as `GFXDEMO.GFX`,
+`BALLS.GFX`, `PPONG.GFX`, and `PPONG.PT3`. Programs load them through the same
+SDK resource loaders; plain, unpacked files remain supported.
+
 ### 4. Run on Sprinter
 
 Copy `.exe` files to the Sprinter disk (real hardware or emulator) and run from DSS command line:

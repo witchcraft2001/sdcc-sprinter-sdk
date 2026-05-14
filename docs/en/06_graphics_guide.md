@@ -279,6 +279,19 @@ video_setpal_range(0, DEMO_GFX_PALETTE_COUNT, demo_gfx_palette);
 gfx_draw_resource(GFX_SCREEN_0, 96, 80, page, demo_gfx_resources, 0, 0);
 ```
 
+Resource files may be stored raw or packed. To build packed example resources,
+run:
+
+```bash
+make examples PACK_ASSETS=1
+```
+
+The build keeps the same DOS 8.3 filenames and replaces the file contents with
+an SDK `SPK1` container. `tools/pack_asset.py` compresses each 16 KB chunk with
+the local `mhmt -hst -zxh` tool and verifies it with `mhmt -d`. At runtime,
+`gfx_load_resource_pages()` detects `SPK1` and depacks into the destination DSS
+pages; raw `.gfx` files still load the same way.
+
 Use 8.3 filenames for all runtime resources. DSS cannot open long filenames, so generated files such as `GFXDEMO.GFX` and generated headers such as `res.h` intentionally use short names.
 
 ## Complete Graphics Example

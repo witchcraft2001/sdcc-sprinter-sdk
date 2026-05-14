@@ -10,6 +10,7 @@
 #include <sprinter/types.h>
 #include <sprinter/ports.h>
 #include <sprinter/dss.h>
+#include <sprinter/assets.h>
 #include <sprinter/bios.h>
 #include <sprinter/video.h>
 #include <sprinter/mouse.h>

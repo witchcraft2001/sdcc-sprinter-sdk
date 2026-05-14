@@ -15,6 +15,7 @@ ZX Sprinter SDK даёт прямой доступ к вызовам DSS, BIOS, 
 #include <sprinter/bios.h>
 #include <sprinter/video.h>
 #include <sprinter/mouse.h>
+#include <sprinter/assets.h>
 #include <sprinter/ay.h>
 #include <sprinter/ports.h>
 #include <sprinter/types.h>
@@ -439,6 +440,25 @@ u8 ay_pt3_mute(u8 block);
 - Все функции возвращают `0` при успехе или код ошибки DSS `SETWIN`, если страницу не удалось подключить.
 - Страница с player image должна оставаться выделенной всё время воспроизведения. Перед `dss_freemem(block)` обязательно вызовите `ay_pt3_mute(block)`.
 
+## sprinter/assets.h -- Загрузка runtime-ресурсов
+
+`asset_load_pages()` загружает обычный бинарный файл или упакованный ресурс SDK
+в последовательные страницы памяти DSS. Упакованные ресурсы создаёт
+`tools/pack_asset.py`: он разбивает файл на чанки по 16 КБ, сжимает их через
+`mhmt -hst -zxh` и записывает в контейнер SDK `SPK1`.
+
+```c
+#include <sprinter/assets.h>
+
+i16 asset_load_pages(const char *path, u8 block, u8 page_count);
+```
+
+Функция возвращает число затронутых страниц назначения или `-1` при ошибке.
+Упакованные и обычные файлы используют те же runtime-имена; loader распознаёт
+упаковку по заголовку `SPK1`, иначе читает файл постранично как raw. HRUST
+depacker работает in-place в WIN3, поэтому обычный стек EXE в WIN2 не
+переключается.
+
 ## sprinter/gfx.h -- Опциональная графическая библиотека
 
 `gfx.lib` не входит в основную `sprinter.lib` и линкуется только явно. Библиотека рассчитана на режим `320x256x256` и предоставляет общий слой для спрайтов, blit-операций, восстановления фона и графических примитивов.
@@ -480,6 +500,10 @@ i16 gfx_load_resource_pages(const char *path, u8 first_page, u8 page_count);
 u8  gfx_draw_resource(u8 screen, u16 x, u8 y, u8 base_page,
                       const gfx_resource_t *resources, u8 id, u8 flags);
 ```
+
+`gfx_load_resource_pages()` внутри использует `asset_load_pages()`, поэтому
+`.gfx` файлы могут быть обычным выводом `png2gfx.py`/`bmp2gfx.py` или
+упакованными `SPK1` файлами SDK, созданными при `PACK_ASSETS=1`.
 
 Основные флаги:
 - `GFX_OPAQUE` -- обычное копирование.

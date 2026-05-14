@@ -346,31 +346,6 @@ static void draw_backgrounds(u8 page) {
     gfx_draw_image_resource(GFX_SCREEN_1, 0, 128, page, ppong_images, RES_BG1, GFX_OPAQUE);
 }
 
-static i16 load_file_pages(const char *path, u8 block, u8 page_count) {
-    i16 fd;
-    i16 bytes;
-    u8 old_page;
-    u8 page;
-
-    fd = dss_open(path, O_RDONLY);
-    if (fd < 0) return -1;
-
-    old_page = inp(PORT_WIN3);
-    for (page = 0; page < page_count; page++) {
-        dss_setwin_page(3, block, page);
-        bytes = dss_read((u8)fd, (void *)0xC000, 0x4000);
-        if (bytes < 0) {
-            outp(PORT_WIN3, old_page);
-            dss_close((u8)fd);
-            return -1;
-        }
-        if (bytes < 0x4000) break;
-    }
-    outp(PORT_WIN3, old_page);
-    dss_close((u8)fd);
-    return 0;
-}
-
 static void run_game(u8 page, u8 music_page, u8 control) {
     game_state_t g;
     draw_state_t d;
@@ -460,7 +435,7 @@ void main(void) {
     if (block != 0xFF &&
         music_block != 0xFF &&
         gfx_load_resource_pages("PPONG.GFX", block, PPONG_PAGE_COUNT) > 0 &&
-        load_file_pages("PPONG.PT3", music_block, MUSIC_PAGE_COUNT) == 0) {
+        asset_load_pages("PPONG.PT3", music_block, MUSIC_PAGE_COUNT) > 0) {
         control = select_control();
         dss_puts("ESC exits.\r\n");
         video_setmode(VMODE_320);

@@ -15,6 +15,7 @@ Or include only the parts you need:
 #include <sprinter/bios.h>
 #include <sprinter/video.h>
 #include <sprinter/mouse.h>
+#include <sprinter/assets.h>
 #include <sprinter/ay.h>
 #include <sprinter/ports.h>
 #include <sprinter/types.h>
@@ -440,6 +441,25 @@ u8 ay_pt3_mute(u8 block);
 - All functions return `0` on success or the DSS `SETWIN` error code if the page cannot be mapped.
 - The page with the player image must remain allocated while music is playing. Always call `ay_pt3_mute(block)` before `dss_freemem(block)`.
 
+## sprinter/assets.h -- Runtime Resource Loading
+
+`asset_load_pages()` loads either a plain binary file or an SDK packed resource
+file into consecutive DSS memory pages. Packed resources are produced by
+`tools/pack_asset.py`, which wraps 16 KB chunks compressed with
+`mhmt -hst -zxh` in the SDK `SPK1` container.
+
+```c
+#include <sprinter/assets.h>
+
+i16 asset_load_pages(const char *path, u8 block, u8 page_count);
+```
+
+The function returns the number of destination pages touched, or `-1` on error.
+Packed and unpacked files use the same runtime filenames; the loader detects
+packed files by the `SPK1` header and otherwise falls back to raw page loading.
+The HRUST depacker runs in-place in WIN3, so the normal EXE stack in WIN2 is not
+remapped.
+
 ## sprinter/gfx.h -- Optional Graphics Library
 
 `gfx.lib` is separate from the base `sprinter.lib` and is linked only when requested. It targets `320x256x256` mode and provides a shared layer for sprites, blits, background restore, and graphics primitives.
@@ -481,6 +501,10 @@ i16 gfx_load_resource_pages(const char *path, u8 first_page, u8 page_count);
 u8  gfx_draw_resource(u8 screen, u16 x, u8 y, u8 base_page,
                       const gfx_resource_t *resources, u8 id, u8 flags);
 ```
+
+`gfx_load_resource_pages()` uses `asset_load_pages()` internally, so `.gfx`
+files may be either plain output from `png2gfx.py`/`bmp2gfx.py` or SDK packed
+`SPK1` files produced with `PACK_ASSETS=1`.
 
 Key flags:
 - `GFX_OPAQUE` -- normal copy.

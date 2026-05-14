@@ -24,7 +24,7 @@ BUILD_DIR    = $(SDK_DIR)build
 INCLUDE_DIR  = $(SDK_DIR)include
 
 # --- Source discovery (recursive, one function per file) ---
-LIB_SUBDIRS  = dss bios video mouse keyb joystick audio stdio stdlib string ctype conio dir
+LIB_SUBDIRS  = dss bios video mouse keyb joystick assets audio stdio stdlib string ctype conio dir
 LIB_WRAPPER_ASM_SRCS = $(foreach d,$(LIB_SUBDIRS),$(wildcard $(LIB_SRC_DIR)/$(d)/*.s))
 LIB_WRAPPER_ASM_BASENAMES = $(notdir $(basename $(LIB_WRAPPER_ASM_SRCS)))
 LIB_C_SRCS_ALL = $(foreach d,$(LIB_SUBDIRS),$(wildcard $(LIB_SRC_DIR)/$(d)/*.c))
@@ -73,6 +73,8 @@ help:
 	@echo "  make                  Build library with SDCC 2.9.0"
 	@echo "  make gfx              Build optional graphics library"
 	@echo "  make examples         Build all examples"
+	@echo "  make examples PACK_ASSETS=1"
+	@echo "                        Build examples with HRUST-packed resource files"
 	@echo "  make clean            Clean"
 	@echo "  make tools            Build sjasmplus"
 	@echo "  make SDCC_OPT=...     Override optimization profile"
