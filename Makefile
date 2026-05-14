@@ -24,7 +24,7 @@ BUILD_DIR    = $(SDK_DIR)build
 INCLUDE_DIR  = $(SDK_DIR)include
 
 # --- Source discovery (recursive, one function per file) ---
-LIB_SUBDIRS  = dss bios video mouse audio stdio stdlib string ctype conio dir
+LIB_SUBDIRS  = dss bios video mouse keyb joystick audio stdio stdlib string ctype conio dir
 LIB_WRAPPER_ASM_SRCS = $(foreach d,$(LIB_SUBDIRS),$(wildcard $(LIB_SRC_DIR)/$(d)/*.s))
 LIB_WRAPPER_ASM_BASENAMES = $(notdir $(basename $(LIB_WRAPPER_ASM_SRCS)))
 LIB_C_SRCS_ALL = $(foreach d,$(LIB_SUBDIRS),$(wildcard $(LIB_SRC_DIR)/$(d)/*.c))

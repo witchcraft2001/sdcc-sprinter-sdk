@@ -25,6 +25,10 @@
 #define BORDER_PLAYER   2
 #define BORDER_AFTER    6
 
+#define CONTROL_JOYSTICK 0
+#define CONTROL_FE       1
+#define CONTROL_DSS      2
+
 static const char font_chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789:-. ";
 
 typedef struct game_state {
@@ -125,7 +129,60 @@ static void reset_game(game_state_t *g) {
     reset_ball(g, 3);
 }
 
-static void process_input(game_state_t *g, u8 *quit) {
+static void read_quit_events(u8 *quit) {
+    dss_key_t key;
+
+    while (dss_scankey(&key)) {
+        if (key.ascii == 27) {
+            *quit = 1;
+            return;
+        }
+    }
+}
+
+static void process_input_joystick(game_state_t *g, u8 *quit) {
+    u8 joy;
+    bool up;
+    bool down;
+
+    read_quit_events(quit);
+    if (*quit)
+        return;
+
+    joy = joystick();
+    up = (joy & JOY_UP) != 0;
+    down = (joy & JOY_DOWN) != 0;
+    g->player_hold = 0;
+
+    if (up && !down)
+        g->player_v = -4;
+    else if (down && !up)
+        g->player_v = 4;
+    else
+        g->player_v = 0;
+}
+
+static void process_input_fe(game_state_t *g, u8 *quit) {
+    bool up;
+    bool down;
+
+    read_quit_events(quit);
+    if (*quit)
+        return;
+
+    up = keyb_pressed(KEYB_W);
+    down = keyb_pressed(KEYB_S);
+    g->player_hold = 0;
+
+    if (up && !down)
+        g->player_v = -4;
+    else if (down && !up)
+        g->player_v = 4;
+    else
+        g->player_v = 0;
+}
+
+static void process_input_dss(game_state_t *g, u8 *quit) {
     dss_key_t key;
 
     if (dss_scankey(&key)) {
@@ -133,6 +190,7 @@ static void process_input(game_state_t *g, u8 *quit) {
             *quit = 1;
             return;
         }
+
         if (key.scan == KEY_SCAN_UP || key.ascii == 'w' || key.ascii == 'W') {
             g->player_v = -4;
             g->player_hold = 7;
@@ -141,6 +199,15 @@ static void process_input(game_state_t *g, u8 *quit) {
             g->player_hold = 7;
         }
     }
+}
+
+static void process_input(game_state_t *g, u8 *quit, u8 control) {
+    if (control == CONTROL_JOYSTICK)
+        process_input_joystick(g, quit);
+    else if (control == CONTROL_DSS)
+        process_input_dss(g, quit);
+    else
+        process_input_fe(g, quit);
 }
 
 static u8 clamp_paddle(i16 y) {
@@ -161,11 +228,13 @@ static u8 ball_overlaps_paddle(u16 ball_x, u8 ball_y, u16 paddle_x, u8 paddle_y)
 static void update_game(game_state_t *g) {
     i16 target;
 
-    if (g->player_hold) {
+    if (g->player_v)
         g->player_y = clamp_paddle((i16)g->player_y + g->player_v);
+
+    if (g->player_hold) {
         g->player_hold--;
-    } else {
-        g->player_v = 0;
+        if (!g->player_hold)
+            g->player_v = 0;
     }
 
     target = g->ball_y + BALL_SIZE / 2 - PADDLE_H / 2;
@@ -302,7 +371,7 @@ static i16 load_file_pages(const char *path, u8 block, u8 page_count) {
     return 0;
 }
 
-static void run_game(u8 page, u8 music_page) {
+static void run_game(u8 page, u8 music_page, u8 control) {
     game_state_t g;
     draw_state_t d;
     u8 hidden;
@@ -329,7 +398,7 @@ static void run_game(u8 page, u8 music_page) {
         ay_pt3_play(music_page);
         debug_border(BORDER_AFTER);
 
-        process_input(&g, &quit);
+        process_input(&g, &quit, control);
         if (quit) break;
 
         old_player_score = g.player_score;
@@ -350,9 +419,36 @@ static void run_game(u8 page, u8 music_page) {
     debug_border(BORDER_BLACK);
 }
 
+static u8 select_control(void) {
+    u8 ch;
+
+    dss_puts("\r\nControls:\r\n");
+    dss_puts("1 - Joystick\r\n");
+    dss_puts("2 - Port FE W/S\r\n");
+    dss_puts("3 - DSS keyboard W/S/up/down\r\n");
+    dss_puts("Select 1-3: ");
+
+    for (;;) {
+        ch = dss_waitkey();
+        if (ch == '1') {
+            dss_puts("Joystick\r\n");
+            return CONTROL_JOYSTICK;
+        }
+        if (ch == '2') {
+            dss_puts("Port FE\r\n");
+            return CONTROL_FE;
+        }
+        if (ch == '3') {
+            dss_puts("DSS keyboard\r\n");
+            return CONTROL_DSS;
+        }
+    }
+}
+
 void main(void) {
     u8 block;
     u8 music_block;
+    u8 control;
 
     block = 0xFF;
     music_block = 0xFF;
@@ -365,12 +461,13 @@ void main(void) {
         music_block != 0xFF &&
         gfx_load_resource_pages("PPONG.GFX", block, PPONG_PAGE_COUNT) > 0 &&
         load_file_pages("PPONG.PT3", music_block, MUSIC_PAGE_COUNT) == 0) {
-        dss_puts("Cursor up/down, ESC exits.\r\n");
+        control = select_control();
+        dss_puts("ESC exits.\r\n");
         video_setmode(VMODE_320);
         show_screen0();
         video_setpal_range(0, PPONG_PALETTE_COUNT, ppong_palette);
         ay_pt3_init(music_block);
-        run_game(block, music_block);
+        run_game(block, music_block, control);
         ay_pt3_mute(music_block);
     } else {
         dss_puts("Resource load failed.\r\n");
