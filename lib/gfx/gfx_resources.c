@@ -52,6 +52,10 @@ i16 gfx_load_resource_pages(const char *path, u8 first_page, u8 page_count) {
     return loaded;
 }
 
+u8 gfx_select_resource_block(u8 base_page, u8 page_count) {
+    return gfx_cache_resource_pages(base_page, page_count);
+}
+
 u8 gfx_draw_resource(u8 screen, u16 x, u8 y, u8 base_page,
                      const gfx_resource_t *resources, u8 id, u8 flags) {
     const gfx_resource_t *res;

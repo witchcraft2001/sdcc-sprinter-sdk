@@ -78,6 +78,7 @@ void gfx_scroll_rect(u8 screen, u16 dst_x, u8 dst_y,
 void gfx_copy_screen(u8 dst_screen, u8 src_screen);
 
 i16 gfx_load_resource_pages(const char *path, u8 first_page, u8 page_count);
+u8  gfx_select_resource_block(u8 base_page, u8 page_count);
 u8  gfx_draw_resource(u8 screen, u16 x, u8 y, u8 base_page,
                       const gfx_resource_t *resources, u8 id, u8 flags);
 void gfx_draw_image(u8 screen, u16 x, u8 y, u16 width, u8 height,
