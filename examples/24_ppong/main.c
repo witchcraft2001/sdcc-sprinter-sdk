@@ -424,21 +424,34 @@ void main(void) {
     u8 block;
     u8 music_block;
     u8 control;
+    u8 old_mode;
+    u8 graphics_started;
+    u8 loaded;
 
     block = 0xFF;
     music_block = 0xFF;
+    old_mode = VMODE_TEXT80;
+    graphics_started = 0;
+    loaded = 0;
     dss_puts("PPONG demo\r\n");
-    dss_puts("Loading PPONG.GFX...\r\n");
     block = dss_getmem_pages(PPONG_PAGE_COUNT);
-    dss_puts("Loading PPONG.PT3...\r\n");
     music_block = dss_getmem_pages(MUSIC_PAGE_COUNT);
-    if (block != 0xFF &&
-        music_block != 0xFF &&
-        gfx_load_resource_pages("PPONG.GFX", block, PPONG_PAGE_COUNT) > 0 &&
-        asset_load_pages("PPONG.PT3", music_block, MUSIC_PAGE_COUNT) > 0) {
+
+    if (block != 0xFF && music_block != 0xFF) {
+        dss_puts("Loading PPONG.GFX...\r\n");
+        if (gfx_load_resource_pages("PPONG.GFX", block, PPONG_PAGE_COUNT) > 0) {
+            dss_puts("Loading PPONG.PT3...\r\n");
+            if (asset_load_pages("PPONG.PT3", music_block, MUSIC_PAGE_COUNT) > 0)
+                loaded = 1;
+        }
+    }
+
+    if (loaded) {
         control = select_control();
         dss_puts("ESC exits.\r\n");
+        old_mode = video_getmode();
         video_setmode(VMODE_320);
+        graphics_started = 1;
         show_screen0();
         video_setpal_range(0, PPONG_PALETTE_COUNT, ppong_palette);
         ay_pt3_init(music_block);
@@ -455,5 +468,6 @@ void main(void) {
     }
     if (block != 0xFF)
         dss_freemem(block);
-    video_setmode(VMODE_TEXT80);
+    if (graphics_started)
+        video_setmode(old_mode);
 }
