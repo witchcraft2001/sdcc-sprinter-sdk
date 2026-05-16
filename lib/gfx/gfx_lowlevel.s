@@ -359,10 +359,17 @@ _gfx_restore_rect::
 ;                    u8 width, u8 height);
 ;
 ; Copies a `width`×`height` rectangle from `src_screen` to `dst_screen`
-; using the same (x, y) on both. Driven by the vertical-copy accelerator
-; command (`LD A,A`) plus LDIR: each LDIR step copies one VRAM column of
-; `height` bytes from (HL) → (DE), and BC = width steps cover the rect.
-; A height of 0 selects a 256-byte block (full screen height).
+; using the same (x, y) on both.
+;
+; Two paths:
+;   height == 0 (full 256-row column): vertical-copy accelerator — one
+;     LD A,A burst per column (`width` iterations). About 20× faster
+;     than the row-by-row blit; this is what gfx_copy_screen uses.
+;   otherwise: horizontal-copy accelerator — one LD L,L burst per row
+;     (`height` iterations × `width` bytes). The vertical-copy command
+;     hardwires 256-byte column bursts on this hardware, so it cannot
+;     express an arbitrary partial-column rect; fall back to the safe
+;     per-row pattern that respects the LD D,D size register.
 _gfx_copy_rect::
         push    ix
         ld      iy, #4
@@ -386,23 +393,53 @@ _gfx_copy_rect::
         ld      a, #0x50
         out     (#0xE2), a
 
-        ; Set Y once; vertical-copy mode handles the row stride internally
-        ; and rewinds Y between LDIR iterations.
-        ld      a, 4 (iy)
-        out     (#0x89), a
+        ld      a, 6 (iy)         ; height
+        or      a
+        jr      z, copy_rect_full ; height == 0 → vertical-accel fast path
 
-        ; BC = width (zero-extended)
-        ld      c, 5 (iy)
-        ld      b, #0
-
+        ; ----- Per-row horizontal-accel path (arbitrary height) -----
+        ; B = height (row counter, djnz)   C = y_start
+        ld      c, 4 (iy)
+        ld      b, 6 (iy)
+copy_rect_row:
+        push    bc
+        ld      a, c
+        out     (#0x89), a        ; PORT_Y = current row
         di
         ld      d, d
-        ld      a, 6 (iy)        ; height (0 → 256)
-        ld      a, a             ; vertical-copy mode
-        ldir                     ; width columns × height bytes
-        ld      b, b             ; disable accelerator
+        ld      a, 5 (iy)         ; size = width
+        ld      l, l              ; horizontal-copy mode
+        ld      a, (hl)           ; trigger: read `width` bytes from src
+        ld      (de), a           ; trigger: write `width` bytes to dst
+        ld      b, b              ; off
+        ei
+        pop     bc
+        inc     c
+        djnz    copy_rect_row
+        jr      copy_rect_done
+
+        ; ----- Full-column vertical-accel path (height == 256) -----
+copy_rect_full:
+        ld      a, 4 (iy)
+        out     (#0x89), a        ; PORT_Y = y_start
+        ld      b, 5 (iy)         ; B = width (column count)
+
+        di
+        ld      d, d              ; size-mode
+        ld      a, #0             ; size = 0 → 256 bytes per column
+                                  ; (LD A,n immediate, the form the accel
+                                  ; latches as the new size)
+copy_rect_col:
+        ld      a, a              ; vertical-copy mode
+        ld      a, (hl)           ; trigger: read 256 bytes down src col
+        ld      (de), a           ; trigger: write 256 bytes down dst col
+        ld      b, b              ; off
+        inc     hl                ; next src column
+        inc     de                ; next dst column
+        djnz    copy_rect_col
         ei
 
+copy_rect_done:
         pop     af
         out     (#0xE2), a
         ld      a, #0xC0
