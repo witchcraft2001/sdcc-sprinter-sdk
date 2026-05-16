@@ -11,12 +11,14 @@
 
 static u8 gfx_resource_block = 0xFF;
 static u8 gfx_resource_page_count = 0;
-static u8 gfx_resource_phys[GFX_RESOURCE_MAX_PAGES];
+/* Exposed to fast-path asm (see gfx_draw_image_full.s). */
+u8 gfx_resource_phys[GFX_RESOURCE_MAX_PAGES];
 
 void gfx_draw_sprite8_win0(u8 screen, u16 x, u8 y, const void *data, u8 flags) SPRINTER_NAKED_DECL;
 void gfx_draw_sprite16_win0(u8 screen, u16 x, u8 y, const void *data, u8 flags) SPRINTER_NAKED_DECL;
 void gfx_draw_sprite24_win0(u8 screen, u16 x, u8 y, const void *data, u8 flags) SPRINTER_NAKED_DECL;
 void gfx_blit_line_accel(u8 screen, u16 x, u8 y, const void *src, u8 width) SPRINTER_NAKED_DECL;
+void gfx_draw_image_full_cols(u8 screen, u8 page_delta, u8 flags) SPRINTER_NAKED_DECL;
 
 static u8 gfx_page_from_flags_c(u8 flags) {
     u8 page;
@@ -164,6 +166,23 @@ u8 gfx_draw_image_page(u8 screen, u16 x, u8 y, u8 base_page,
     draw_flags = flags | image->flags;
     line_page = image->page_delta;
     line_off = image->offset;
+
+    /* Full-screen 320x256 fast path: source data stored column-major with
+     * 64 columns per page (256 bytes each), driven by the vertical-copy
+     * accelerator command. Row-major sources fall through to the generic
+     * line-by-line blit below.
+     */
+    if (x == 0 && y == 0 &&
+        image->offset == 0 &&
+        image->width == GFX_SCREEN_WIDTH &&
+        image->height == 0 &&
+        rows == GFX_SCREEN_HEIGHT &&
+        (draw_flags & GFX_RESF_COLUMNS)) {
+        if (gfx_get_resource_phys(base_page, image->page_delta) == 0xFF)
+            return 1;
+        gfx_draw_image_full_cols(screen, image->page_delta, draw_flags);
+        return 0;
+    }
 
     if (image->size <= GFX_PAGE_SIZE &&
         image->offset <= (u16)(GFX_PAGE_SIZE - image->size)) {

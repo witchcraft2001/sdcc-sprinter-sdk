@@ -355,42 +355,54 @@ _gfx_restore_rect::
         pop     ix
         ret
 
+; void gfx_copy_rect(u8 dst_screen, u8 src_screen, u16 x, u8 y,
+;                    u8 width, u8 height);
+;
+; Copies a `width`×`height` rectangle from `src_screen` to `dst_screen`
+; using the same (x, y) on both. Driven by the vertical-copy accelerator
+; command (`LD A,A`) plus LDIR: each LDIR step copies one VRAM column of
+; `height` bytes from (HL) → (DE), and BC = width steps cover the rect.
+; A height of 0 selects a 256-byte block (full screen height).
 _gfx_copy_rect::
         push    ix
         ld      iy, #4
         add     iy, sp
+        ; HL = src VRAM addr = 0xC000 + src_screen*320 + x
         ld      l, 2 (iy)
         ld      h, 3 (iy)
         ld      a, 1 (iy)
         call    _gfx_dest_addr
         push    hl
+        ; DE = dst VRAM addr = 0xC000 + dst_screen*320 + x
         ld      l, 2 (iy)
         ld      h, 3 (iy)
         ld      a, 0 (iy)
         call    _gfx_dest_addr
         ex      de, hl
         pop     hl
+
         in      a, (#0xE2)
         push    af
         ld      a, #0x50
         out     (#0xE2), a
-        ld      c, 4 (iy)
-        ld      b, 6 (iy)
-copy_rect_loop:
-        push    bc
-        ld      a, c
+
+        ; Set Y once; vertical-copy mode handles the row stride internally
+        ; and rewinds Y between LDIR iterations.
+        ld      a, 4 (iy)
         out     (#0x89), a
+
+        ; BC = width (zero-extended)
+        ld      c, 5 (iy)
+        ld      b, #0
+
         di
         ld      d, d
-        ld      a, 5 (iy)
-        ld      l, l
-        ld      a, (hl)
-        ld      (de), a
-        ld      b, b
+        ld      a, 6 (iy)        ; height (0 → 256)
+        ld      a, a             ; vertical-copy mode
+        ldir                     ; width columns × height bytes
+        ld      b, b             ; disable accelerator
         ei
-        pop     bc
-        inc     c
-        djnz    copy_rect_loop
+
         pop     af
         out     (#0xE2), a
         ld      a, #0xC0

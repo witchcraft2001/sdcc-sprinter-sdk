@@ -39,11 +39,11 @@ static const char *const multi_names[MULTI_IMG_COUNT] = {
 };
 
 static const gfx_image_t multi_images[MULTI_IMG_COUNT] = {
-    {0, 0x0000, 0x4001, 320, 0, 0},
-    {0, 0x0000, 0x4001, 320, 0, 0},
-    {0, 0x0000, 0x4001, 320, 0, 0},
-    {0, 0x0000, 0x4001, 320, 0, 0},
-    {0, 0x0000, 0x4001, 320, 0, 0},
+    {0, 0x0000, 0x4001, 320, 0, GFX_RESF_COLUMNS},
+    {0, 0x0000, 0x4001, 320, 0, GFX_RESF_COLUMNS},
+    {0, 0x0000, 0x4001, 320, 0, GFX_RESF_COLUMNS},
+    {0, 0x0000, 0x4001, 320, 0, GFX_RESF_COLUMNS},
+    {0, 0x0000, 0x4001, 320, 0, GFX_RESF_COLUMNS},
 };
 
 #endif /* _MULTI_IMG_H */

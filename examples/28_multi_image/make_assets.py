@@ -212,23 +212,46 @@ def emit_header(path):
             f.write("    \"%s\",\n" % name)
         f.write("};\n\n")
 
-        # size > GFX_PAGE_SIZE (0x4000) forces the row-by-row path.
-        # gfx_image_t.height is u8; 0 means full 256 rows.
+        # size > GFX_PAGE_SIZE (0x4000) forces the slow path off the small-
+        # sprite fast lane; the full-screen origin-aligned dispatch in
+        # gfx_draw_image_page picks the column-major asm helper because of
+        # the GFX_RESF_COLUMNS flag below. gfx_image_t.height is u8; 0 means
+        # full 256 rows.
         h_field = 0 if H == 256 else H
+        flag = "GFX_RESF_COLUMNS" if USE_COLUMNS else "0"
         f.write("static const gfx_image_t multi_images[MULTI_IMG_COUNT] = {\n")
         for _ in IMAGES:
-            f.write("    {0, 0x0000, 0x4001, %d, %d, 0},\n" % (W, h_field))
+            f.write("    {0, 0x0000, 0x4001, %d, %d, %s},\n"
+                    % (W, h_field, flag))
         f.write("};\n\n")
 
         f.write("#endif /* _MULTI_IMG_H */\n")
+
+
+def transpose_to_columns(buf):
+    """Reorder a row-major WxH buffer into column-major (column c at offset
+    c*H, contiguous H bytes). With H=256 every column maps to a clean
+    256-byte stride, so columns never cross a 16K page boundary."""
+    out = bytearray(W * H)
+    for c in range(W):
+        col_off = c * H
+        for r in range(H):
+            out[col_off + r] = buf[r * W + c]
+    return out
+
+
+USE_COLUMNS = True    # column-major source feeds the vertical-copy accel path
 
 
 def main():
     out_dir = os.path.dirname(os.path.abspath(__file__))
     for filename, _dos_name, _name, fn in IMAGES:
         path = os.path.join(out_dir, filename)
+        data = fn()
+        if USE_COLUMNS:
+            data = transpose_to_columns(data)
         with open(path, "wb") as f:
-            f.write(bytes(fn()))
+            f.write(bytes(data))
     emit_header(os.path.join(out_dir, "res.h"))
 
 

@@ -22,6 +22,7 @@
 #define GFX_TRANSPARENT_COLOR 0xFF
 
 #define GFX_RESF_MASKED     GFX_MASKED
+#define GFX_RESF_COLUMNS    0x80    /* image data is column-major (vertical scanlines) */
 
 typedef struct gfx_resource {
     u8  page_delta;
