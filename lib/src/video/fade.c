@@ -1,24 +1,31 @@
 #include <sprinter/fade.h>
 #include <sprinter/video.h>
 #include <sprinter/ay.h>
-#include <sprinter/bios.h>
+
+extern void video_pal_accel_push(const u8 *src_channels);
 
 /*
  * Step-paced palette fade engine.
  *
- * fade_capture_palette() copies the source RGB6 palette into
- * fade_source. Each fade_step() applies the current step's component
- * LUT and pushes one bios_setpal() per colour (which internally
- * updates both hardware palette pages on the stack-backed path that
- * has been verified to produce correct colours).
+ * The hot path uses the Sprinter accelerator burst (see
+ * lib/src/video/fade_pal.s) which transfers 256 bytes per accel
+ * trigger. To make use of it, source and intermediate buffers are
+ * laid out as three contiguous 256-byte channels: B[256], G[256],
+ * R[256] (NOT interleaved RGB triples).
  *
- * fade_step() does NOT wait for vsync and does NOT play music - the
- * caller drives the frame loop. The blocking helpers (fade_in/out
- * and fade_in/out_music) wrap fade_step() with vsync + optional PT3.
+ * fade_capture_palette() transposes the caller's video_rgb6_t array
+ * into this channels layout once. fade_step() builds the faded
+ * channels via a 64-byte component LUT (recomputed only when the
+ * step value changes) and pushes the result with six accel bursts
+ * - three per palette page x two hardware palette pages.
+ *
+ * fade_step() does NOT wait for vsync and does NOT play music; the
+ * caller drives the frame loop. fade_in/out + fade_in/out_music are
+ * blocking wrappers.
  */
 
-static video_rgb6_t fade_source[256];
-static video_rgb6_t fade_temp[256];
+static u8 fade_source_channels[768];    /* B[256] G[256] R[256], 0..63 raw */
+static u8 fade_temp_channels[768];      /* shifted << 2, ready for accel  */
 static u8 fade_lut[64];
 static u8 fade_lut_step;
 static u8 fade_lut_ready;
@@ -37,32 +44,34 @@ static void fade_build_lut(u8 step) {
 }
 
 static void fade_apply(u8 step) {
-    u8 i;
-    u8 done;
+    u16 i;
+    u8  v;
 
     fade_build_lut(step);
 
-    i = 0;
-    done = 0;
-    while (!done) {
-        fade_temp[i].r = fade_lut[fade_source[i].r];
-        fade_temp[i].g = fade_lut[fade_source[i].g];
-        fade_temp[i].b = fade_lut[fade_source[i].b];
-        bios_setpal(i, fade_temp[i].r, fade_temp[i].g, fade_temp[i].b);
-        i++;
-        if (i == 0) done = 1;
+    /* Single linear pass over all 768 source bytes - channel layout
+     * is irrelevant to the LUT lookup itself. */
+    for (i = 0; i < 768; i++) {
+        v = fade_lut[fade_source_channels[i]];
+        fade_temp_channels[i] = (u8)(v << 2);
     }
+
+    video_pal_accel_push(fade_temp_channels);
 }
 
 void fade_capture_palette(const video_rgb6_t *palette) {
     u16 i;
-    const u8 *src;
-    u8 *dst;
+    u8 *b_chan;
+    u8 *g_chan;
+    u8 *r_chan;
 
-    src = (const u8 *)palette;
-    dst = (u8 *)fade_source;
-    for (i = 0; i < sizeof(fade_source); i++) {
-        dst[i] = src[i];
+    b_chan = fade_source_channels + 0;
+    g_chan = fade_source_channels + 256;
+    r_chan = fade_source_channels + 512;
+    for (i = 0; i < 256; i++) {
+        b_chan[i] = palette[i].b;
+        g_chan[i] = palette[i].g;
+        r_chan[i] = palette[i].r;
     }
     fade_lut_ready = 0;
 }
