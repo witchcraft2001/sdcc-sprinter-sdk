@@ -87,6 +87,18 @@ video_setpal_graf();          /* built-in GRAF palette */
 
 `video_setpal_range()` takes hardware 6-bit components (`0..63`), while `video_setpal_range8()` takes normal 8-bit RGB components (`0..255`) and scales them. This API lives in the base `sprinter.lib`, so it can be shared by `gfx.lib` and future geometry primitive layers.
 
+### Method 4: video_setpal256_fast() (full 256-colour update)
+
+For full-screen palette swaps and fade effects, `video_setpal256_fast()` loads all 256 entries into both hardware palette pages in a single call. It builds a hardware-format buffer on the stack and issues four BIOS PIC_SET_PAL range calls instead of 256 individual `bios_setpal()` calls, which makes it fast enough to use on every frame:
+
+```c
+static const video_rgb6_t my_palette[256] = { /* 256 RGB6 entries */ };
+
+video_setpal256_fast(my_palette);
+```
+
+The function temporarily uses about 1 KB of stack, restores `PORT_Y` to its safe value, and is safe to call in any video mode. Use it whenever you need to install or refresh a whole 256-entry palette - in particular it is the path the [fade module](fade_guide.md) uses under the hood.
+
 ## Drawing Pixels
 
 Use `bios_putpixel()` to draw individual pixels:

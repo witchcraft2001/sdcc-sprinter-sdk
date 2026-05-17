@@ -83,6 +83,18 @@ void video_setpal_range(u8 first, u16 count, const video_rgb6_t *colors);
  */
 void video_setpal_range8(u8 first, u16 count, const video_rgb8_t *colors);
 
+/** Load all 256 palette entries quickly, in both hardware palette pages.
+ *
+ *  Optimised path for fades, full screen image swaps and other
+ *  whole-palette updates. Internally builds a hardware-format buffer
+ *  (B, G, R, 0 per entry) and applies it with four BIOS PIC_SET_PAL
+ *  range calls instead of 256 individual `bios_setpal()` calls.
+ *
+ *  Safe to call in any video mode. Allocates ~1 KB on the stack while
+ *  running and restores PORT_Y to its safe value (0xC0) on return.
+ */
+void video_setpal256_fast(const video_rgb6_t *colors) SPRINTER_NAKED_DECL;
+
 /** Load BIOS GRAF preset palette. */
 void video_setpal_graf(void) SPRINTER_NAKED_DECL;
 
