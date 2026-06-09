@@ -33,12 +33,12 @@ Always restore text mode before exiting, or the DSS prompt will be unusable.
 Use `bios_setpal()` to set individual palette entries:
 
 ```c
-/*  index, red, green, blue -- each component is 0-63 (6-bit) */
-bios_setpal(0, 0, 0, 0);       /* Color 0: black */
-bios_setpal(1, 63, 0, 0);      /* Color 1: bright red */
-bios_setpal(2, 0, 63, 0);      /* Color 2: bright green */
-bios_setpal(3, 0, 0, 63);      /* Color 3: bright blue */
-bios_setpal(255, 63, 63, 63);  /* Color 255: white */
+/*  index, red, green, blue -- each component is 0-255 */
+bios_setpal(0, 0, 0, 0);          /* Color 0: black */
+bios_setpal(1, 255, 0, 0);        /* Color 1: bright red */
+bios_setpal(2, 0, 255, 0);        /* Color 2: bright green */
+bios_setpal(3, 0, 0, 255);        /* Color 3: bright blue */
+bios_setpal(255, 255, 255, 255);  /* Color 255: white */
 ```
 
 ### Method 2: BIOS #A6 (preset palette)
@@ -61,7 +61,7 @@ static void set_graf_palette(void) {
 
 ### Method 3: video_setpal()
 
-The `video_setpal()` function uses 0-255 range per component (it scales internally):
+The `video_setpal()` function uses 0-255 range per component:
 
 ```c
 video_setpal(0, 0, 0, 0);         /* Black */
@@ -74,25 +74,25 @@ video_setpal(2, 0, 255, 0);       /* Green */
 For a shared graphics palette, it is more practical to load several entries at once:
 
 ```c
-static const video_rgb6_t palette[] = {
+static const video_rgb8_t palette[] = {
     {0, 0, 0},
-    {63, 0, 0},
-    {0, 63, 0},
-    {0, 0, 63}
+    {255, 0, 0},
+    {0, 255, 0},
+    {0, 0, 255}
 };
 
 video_setpal_range(0, 4, palette);
 video_setpal_graf();          /* built-in GRAF palette */
 ```
 
-`video_setpal_range()` takes hardware 6-bit components (`0..63`), while `video_setpal_range8()` takes normal 8-bit RGB components (`0..255`) and scales them. This API lives in the base `sprinter.lib`, so it can be shared by `gfx.lib` and future geometry primitive layers.
+`video_setpal_range()` takes 8-bit RGB components (`0..255` per channel) and writes them to the hardware palette verbatim. This API lives in the base `sprinter.lib`, so it can be shared by `gfx.lib` and future geometry primitive layers.
 
 ### Method 4: video_setpal256_fast() (full 256-colour update)
 
 For full-screen palette swaps and fade effects, `video_setpal256_fast()` loads all 256 entries into both hardware palette pages in a single call. It builds a hardware-format buffer on the stack and issues four BIOS PIC_SET_PAL range calls instead of 256 individual `bios_setpal()` calls, which makes it fast enough to use on every frame:
 
 ```c
-static const video_rgb6_t my_palette[256] = { /* 256 RGB6 entries */ };
+static const video_rgb8_t my_palette[256] = { /* 256 RGB8 entries */ };
 
 video_setpal256_fast(my_palette);
 ```
@@ -255,7 +255,7 @@ python3 tools/png2gfx.py \
     assets/sprite16.png assets/sprite24.png
 ```
 
-The tool accepts non-interlaced 8-bit RGB/RGBA/indexed PNGs, builds one shared palette with up to 255 opaque colors, uses `0xFF` as transparent pixels, and writes a page-friendly `.gfx` file where resource payloads do not cross 16 KB page boundaries. The generated header contains `video_rgb6_t *_palette[]` and `gfx_resource_t *_resources[]`.
+The tool accepts non-interlaced 8-bit RGB/RGBA/indexed PNGs, builds one shared palette with up to 255 opaque colors, uses `0xFF` as transparent pixels, and writes a page-friendly `.gfx` file where resource payloads do not cross 16 KB page boundaries. The generated header contains `video_rgb8_t *_palette[]` and `gfx_resource_t *_resources[]`.
 
 ## BMP Resources
 

@@ -14,7 +14,7 @@
  * at app startup the 20-30 ms cost is invisible. Per-frame fades
  * use the optimised stack-allocated batch path in fade_pal.s instead.
  */
-void video_setpal256_fast(const video_rgb6_t *colors) {
+void video_setpal256_fast(const video_rgb8_t *colors) {
     u8 index;
     u8 done;
 

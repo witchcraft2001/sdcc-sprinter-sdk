@@ -197,9 +197,9 @@ def emit_header(path):
         f.write("#define MULTI_IMG_PAGES       %d\n" % pages_per_image)
         f.write("#define MULTI_IMG_PALETTE_COUNT %d\n\n" % len(PAL8))
 
-        f.write("static const video_rgb6_t multi_palette[] = {\n")
+        f.write("static const video_rgb8_t multi_palette[] = {\n")
         for r, g, b in PAL8:
-            f.write("    {%d, %d, %d},\n" % (r >> 2, g >> 2, b >> 2))
+            f.write("    {%d, %d, %d},\n" % (r, g, b))
         f.write("};\n\n")
 
         f.write("static const char *const multi_paths[MULTI_IMG_COUNT] = {\n")

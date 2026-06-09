@@ -26,7 +26,7 @@ def build_palette():
         sat = 0.85
         val = 0.30 + 0.70 * (math.sin(i * math.pi / 256.0))
         r, g, b = hsv_to_rgb(hue, sat, val)
-        pal.append((to6(r), to6(g), to6(b)))
+        pal.append((to8(r), to8(g), to8(b)))
     return pal
 
 
@@ -47,10 +47,10 @@ def hsv_to_rgb(h, s, v):
     return v, p, q
 
 
-def to6(c):
-    n = int(c * 63.0 + 0.5)
+def to8(c):
+    n = int(c * 255.0 + 0.5)
     if n < 0: return 0
-    if n > 63: return 63
+    if n > 255: return 255
     return n
 
 
@@ -148,7 +148,7 @@ def emit_header(path, pal):
         f.write("#define FADE_IMG_PAGES         %d\n" % pages)
         f.write("#define FADE_PALETTE_COUNT     %d\n\n" % len(pal))
 
-        f.write("static const video_rgb6_t fade_palette[%d] = {\n" % len(pal))
+        f.write("static const video_rgb8_t fade_palette[%d] = {\n" % len(pal))
         for r, g, b in pal:
             f.write("    {%d, %d, %d},\n" % (r, g, b))
         f.write("};\n\n")

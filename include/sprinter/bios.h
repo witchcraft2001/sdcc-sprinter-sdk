@@ -61,7 +61,7 @@
 
 /** Set a single palette entry via BIOS #A4.
  *  index: color index (0-255)
- *  r, g, b: color components (0-63 each, 6-bit)
+ *  r, g, b: color components (0-255 each, 8-bit)
  */
 void bios_setpal(u8 index, u8 r, u8 g, u8 b) SPRINTER_NAKED_DECL;
 

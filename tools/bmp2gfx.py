@@ -49,10 +49,6 @@ def read_bmp8(path):
     return width, abs_height, palette, rows
 
 
-def rgb8_to_rgb6(rgb):
-    return (rgb[0] >> 2, rgb[1] >> 2, rgb[2] >> 2)
-
-
 def color_dist(a, b):
     dr = a[0] - b[0]
     dg = a[1] - b[1]
@@ -141,7 +137,7 @@ def pack_binary(palette, entries):
     header = bytearray()
     header += b"GFX2"
     header += struct.pack("<HH", len(entries), len(palette))
-    header += bytes(rgb8_to_rgb6(rgb)[i] for rgb in palette for i in range(3))
+    header += bytes(rgb[i] for rgb in palette for i in range(3))
 
     data_pos = len(header) + table_size
     payload = bytearray(b"\0" * data_pos)
@@ -183,9 +179,9 @@ def write_header(path, name, palette, entries, page_count):
         f.write("#define %s_IMAGE_COUNT %d\n" % (upper, len(entries)))
         f.write("#define %s_PALETTE_COUNT %d\n" % (upper, len(palette)))
         f.write("#define %s_PAGE_COUNT %d\n\n" % (upper, page_count))
-        f.write("static const video_rgb6_t %s_palette[] = {\n" % name)
+        f.write("static const video_rgb8_t %s_palette[] = {\n" % name)
         for rgb in palette:
-            r, g, b = rgb8_to_rgb6(rgb)
+            r, g, b = rgb[0], rgb[1], rgb[2]
             f.write("    {%d, %d, %d},\n" % (r, g, b))
         f.write("};\n\n")
         f.write("static const gfx_image_t %s_images[] = {\n" % name)

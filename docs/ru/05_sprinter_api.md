@@ -353,7 +353,7 @@ u8   inp(u16 port);
 void outp(u16 port, u8 value);
 ```
 
-- `bios_setpal(index, r, g, b)` меняет один цвет палитры. `index` — `0..255`, компоненты `r`, `g`, `b` — `0..63`.
+- `bios_setpal(index, r, g, b)` меняет один цвет палитры. `index` — `0..255`, компоненты `r`, `g`, `b` — `0..255`.
 - `bios_putpixel(x, y, color)` рисует один пиксель в графическом режиме.
 - `bios_version()` возвращает версию BIOS в BCD-формате.
 - `bios_board_id()` возвращает идентификатор платы или типа Sprinter.
@@ -385,8 +385,7 @@ void video_sync_enable(void);
 void video_sync_disable(void);
 void video_vsync(void);
 void video_setpal(u8 index, u8 r, u8 g, u8 b);
-void video_setpal_range(u8 first, u16 count, const video_rgb6_t *colors);
-void video_setpal_range8(u8 first, u16 count, const video_rgb8_t *colors);
+void video_setpal_range(u8 first, u16 count, const video_rgb8_t *colors);
 void video_setpal_graf(void);
 void video_mapvram(u8 win, u8 page);
 void video_safe_porty(void);
@@ -405,8 +404,7 @@ void video_safe_porty(void);
   синхронизации остаётся включённым для следующих кадров и отключается при `video_setmode(VMODE_TEXT*)`
   или `dss_exit()`.
 - `video_setpal(index, r, g, b)` задаёт один цвет палитры через 8-битные RGB-компоненты (`0..255`).
-- `video_setpal_range(first, count, colors)` задаёт диапазон цветов через 6-битные RGB-компоненты (`0..63`). `count` может быть до 255.
-- `video_setpal_range8(first, count, colors)` задаёт диапазон цветов через 8-битные RGB-компоненты (`0..255`) с масштабированием до аппаратного диапазона.
+- `video_setpal_range(first, count, colors)` задаёт диапазон цветов через 8-битные RGB-компоненты (`0..255` на канал, `video_rgb8_t`). `count` может быть до 256.
 - `video_setpal_graf()` загружает встроенную BIOS-палитру GRAF.
 - `video_mapvram(win, page)` подключает VRAM-страницу в окно памяти `0..3`. Обычно VRAM-страницы начинаются с `0x50`.
 - `video_safe_porty()` возвращает `PORT_Y` в безопасное состояние после прямой работы с пикселями.

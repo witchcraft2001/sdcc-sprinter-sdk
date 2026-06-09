@@ -7,19 +7,19 @@
 #define MULTI_IMG_PAGES       5
 #define MULTI_IMG_PALETTE_COUNT 12
 
-static const video_rgb6_t multi_palette[] = {
+static const video_rgb8_t multi_palette[] = {
     {0, 0, 0},
-    {63, 63, 63},
-    {8, 10, 30},
-    {10, 22, 12},
-    {15, 15, 15},
-    {50, 40, 7},
-    {35, 7, 7},
-    {55, 55, 25},
-    {63, 50, 50},
-    {45, 50, 63},
-    {45, 60, 45},
-    {50, 50, 50},
+    {255, 255, 255},
+    {32, 40, 120},
+    {40, 90, 50},
+    {60, 60, 60},
+    {200, 160, 30},
+    {140, 30, 30},
+    {220, 220, 100},
+    {255, 200, 200},
+    {180, 200, 255},
+    {180, 240, 180},
+    {200, 200, 200},
 };
 
 static const char *const multi_paths[MULTI_IMG_COUNT] = {

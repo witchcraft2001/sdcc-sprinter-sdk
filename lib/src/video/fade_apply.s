@@ -2,7 +2,7 @@
         .globl  _fade_apply_step
 
 ;; ---------------------------------------------------------------------
-;; void fade_apply_step(const video_rgb6_t *src_rgb6, const u8 *lut)
+;; void fade_apply_step(const video_rgb8_t *src_rgb8, const u8 *lut)
 ;;
 ;; SDCC 2.9.0 uses stack-based calling (sdcccall(0)). After our two
 ;; push ix / push iy, the stack frame is:
@@ -10,7 +10,7 @@
 ;;   SP+0..+1 = saved IY
 ;;   SP+2..+3 = saved IX
 ;;   SP+4..+5 = return address
-;;   SP+6..+7 = src_rgb6 (1st arg)
+;;   SP+6..+7 = src_rgb8 (1st arg)
 ;;   SP+8..+9 = lut      (2nd arg)
 ;;
 ;; Direct palette write through WIN3 + $C3E0..$C3E2. Protocol confirmed
@@ -44,7 +44,7 @@ _fade_apply_step::
         ld      h, (hl)
         ld      l, a
         push    hl
-        pop     ix                      ; IX = src_rgb6
+        pop     ix                      ; IX = src_rgb8
 
         ;; --- Load lut (2nd arg) into BC ---
         ld      hl, #8
@@ -71,34 +71,28 @@ fap_loop:
         ld      a, e
         out     (#PORT_Y), a            ; PORT_Y = E
 
-        ;; --- R = lut[ src[i].r ] << 2 -> $C3E0 ---
+        ;; --- R = lut[ src[i].r ] -> $C3E0 ---
         ld      a, 0 (ix)
         ld      l, a
         ld      h, #0
         add     hl, bc
         ld      a, (hl)
-        add     a, a
-        add     a, a
         ld      (#PAL_R), a
 
-        ;; --- G = lut[ src[i].g ] << 2 -> $C3E1 ---
+        ;; --- G = lut[ src[i].g ] -> $C3E1 ---
         ld      a, 1 (ix)
         ld      l, a
         ld      h, #0
         add     hl, bc
         ld      a, (hl)
-        add     a, a
-        add     a, a
         ld      (#PAL_G), a
 
-        ;; --- B = lut[ src[i].b ] << 2 -> $C3E2 ---
+        ;; --- B = lut[ src[i].b ] -> $C3E2 ---
         ld      a, 2 (ix)
         ld      l, a
         ld      h, #0
         add     hl, bc
         ld      a, (hl)
-        add     a, a
-        add     a, a
         ld      (#PAL_B), a
 
         inc     ix

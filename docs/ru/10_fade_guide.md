@@ -36,7 +36,7 @@ typedef struct fade_state {
     u16 accumulator;
 } fade_state_t;
 
-void fade_capture_palette(const video_rgb6_t *palette);
+void fade_capture_palette(const video_rgb8_t *palette);
 
 u8   fade_begin(fade_state_t *state, u8 duration_frames, u8 mode);
 u8   fade_step(fade_state_t *state);
@@ -50,7 +50,7 @@ void fade_in_music(u8 frames, u8 pt3_block);
 
 ### `fade_capture_palette(palette)`
 
-Копирует 256 RGB6-цветов во внутренний буфер. Вызывается один раз после установки конечной палитры в железо (например, через `video_setpal256_fast()` или `video_setpal_range()`). Все последующие `fade_in()` / `fade_out()` берут эту палитру как «максимальную яркость».
+Копирует 256 RGB8-цветов (`0..255` на канал) во внутренний буфер. Вызывается один раз после установки конечной палитры в железо (например, через `video_setpal256_fast()` или `video_setpal_range()`). Все последующие `fade_in()` / `fade_out()` берут эту палитру как «максимальную яркость».
 
 ### `fade_begin(state, duration_frames, mode)`
 

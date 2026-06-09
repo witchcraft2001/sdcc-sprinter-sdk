@@ -44,12 +44,12 @@ typedef struct fade_state {
 
 /** Capture the source palette for subsequent fades.
  *
- *  Copies 256 RGB6 entries from `palette` into an internal buffer.
- *  Call once after you have loaded the desired final palette into
- *  hardware (e.g. via video_setpal_range() or video_setpal256_fast()).
- *  Subsequent fade_in/out operations use this captured palette as the
- *  "full brightness" reference. */
-void fade_capture_palette(const video_rgb6_t *palette);
+ *  Copies 256 RGB8 entries (0..255 per channel) from `palette` into an
+ *  internal buffer. Call once after you have loaded the desired final
+ *  palette into hardware (e.g. via video_setpal_range() or
+ *  video_setpal256_fast()). Subsequent fade_in/out operations use this
+ *  captured palette as the "full brightness" reference. */
+void fade_capture_palette(const video_rgb8_t *palette);
 
 /** Initialise a fade state for a step-driven fade.
  *

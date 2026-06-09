@@ -383,7 +383,7 @@ For direct hardware access, use the Sprinter-specific headers. These are indepen
 
 | Function | Description |
 |----------|-------------|
-| `bios_setpal(idx, r, g, b)` | Set palette entry (0-63 per channel) |
+| `bios_setpal(idx, r, g, b)` | Set palette entry (0-255 per channel, full 8-bit) |
 | `bios_putpixel(x, y, color)` | Draw pixel (320x256 mode) |
 | `bios_version()` | Get BIOS version |
 | `bios_board_id()` | Get board ID |
@@ -398,7 +398,7 @@ For direct hardware access, use the Sprinter-specific headers. These are indepen
 | `video_getmode()` | Get current mode |
 | `video_swap()` | Swap double buffer |
 | `video_vsync()` | Wait for VSync |
-| `video_setpal(idx, r, g, b)` | Set palette color |
+| `video_setpal(idx, r, g, b)` | Set palette color (0-255 per channel) |
 | `video_safe_porty()` | Reset PORT_Y to safe zone (call after drawing!) |
 
 ### `<sprinter/mouse.h>` — Mouse Driver

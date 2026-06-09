@@ -11,16 +11,10 @@ _bios_setpal::
         add     hl,sp
         ld      sp,hl
         ld      a,7(ix)
-        add     a,a
-        add     a,a
         ld      -4(ix),a
         ld      a,6(ix)
-        add     a,a
-        add     a,a
         ld      -3(ix),a
         ld      a,5(ix)
-        add     a,a
-        add     a,a
         ld      -2(ix),a
         xor     a
         ld      -1(ix),a

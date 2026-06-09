@@ -2,16 +2,16 @@
 #include <sprinter/video.h>
 #include <sprinter/ay.h>
 
-extern void fade_apply_step(const video_rgb6_t *src, const u8 *lut);
+extern void fade_apply_step(const video_rgb8_t *src, const u8 *lut);
 
 /*
  * Step-paced palette fade engine.
  *
  * Hot path is a single direct-write loop in fade_apply.s that:
- *   - maps VRAM page #50 into WIN0 (port #82) under DI,
- *   - for each colour 0..255, looks up R/G/B in lut[], shifts << 2,
- *     and writes three bytes to $03E0..$03E2 with PORT_Y stepping,
- *   - restores WIN0 and enables interrupts.
+ *   - maps VRAM page #50 into WIN3 (port #E2),
+ *   - for each colour 0..255, looks up the 8-bit R/G/B in lut[] and
+ *     writes three bytes to $C3E0..$C3E2 with PORT_Y stepping,
+ *   - restores WIN3.
  *
  * No BIOS calls, no accelerator, no trampoline. Protocol confirmed
  * against mame/src/mame/sinclair/sprinter.cpp and verified on real
@@ -22,21 +22,21 @@ extern void fade_apply_step(const video_rgb6_t *src, const u8 *lut);
  * are the blocking wrappers.
  */
 
-static video_rgb6_t fade_source[256];
-static u8 fade_lut[64];
+static video_rgb8_t fade_source[256];
+static u8 fade_lut[256];
 static u8 fade_lut_step;
 static u8 fade_lut_ready;
 
 static void fade_build_lut(u8 step) {
-    u8  c;
+    u16 c;
     u16 t;
 
     if (fade_lut_ready && step == fade_lut_step) return;
     fade_lut_ready = 1;
     fade_lut_step = step;
-    for (c = 0; c < 64; c++) {
-        t = (u16)c * (u16)step;
-        fade_lut[c] = (u8)(t >> 5);     /* divide by FADE_STEPS (=32) */
+    for (c = 0; c < 256; c++) {
+        t = c * (u16)step;
+        fade_lut[c] = (u8)(t >> 5);     /* c * step / FADE_STEPS (=32) */
     }
 }
 
@@ -45,7 +45,7 @@ static void fade_apply(u8 step) {
     fade_apply_step(fade_source, fade_lut);
 }
 
-void fade_capture_palette(const video_rgb6_t *palette) {
+void fade_capture_palette(const video_rgb8_t *palette) {
     u16 i;
     const u8 *src;
     u8 *dst;

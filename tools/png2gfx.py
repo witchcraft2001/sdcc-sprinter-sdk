@@ -114,10 +114,6 @@ def read_png(path):
     return width, height, pixels
 
 
-def rgb8_to_rgb6(rgb):
-    return (rgb[0] >> 2, rgb[1] >> 2, rgb[2] >> 2)
-
-
 def convert_images(paths):
     palette = []
     palette_map = {}
@@ -146,7 +142,7 @@ def pack_binary(palette, images):
     header = bytearray()
     header += b"GFX1"
     header += struct.pack("<HH", len(images), len(palette))
-    header += bytes(rgb8_to_rgb6(rgb)[i] for rgb in palette for i in range(3))
+    header += bytes(rgb[i] for rgb in palette for i in range(3))
     data_pos = len(header) + table_size
     payload = bytearray(b"\0" * data_pos)
     entries = []
@@ -186,9 +182,9 @@ def write_header(path, name, palette, entries):
         f.write("#include <sprinter/gfx.h>\n\n")
         f.write("#define %s_RESOURCE_COUNT %d\n" % (name.upper(), len(entries)))
         f.write("#define %s_PALETTE_COUNT %d\n\n" % (name.upper(), len(palette)))
-        f.write("static const video_rgb6_t %s_palette[] = {\n" % name)
+        f.write("static const video_rgb8_t %s_palette[] = {\n" % name)
         for rgb in palette:
-            r, g, b = rgb8_to_rgb6(rgb)
+            r, g, b = rgb[0], rgb[1], rgb[2]
             f.write("    {%d, %d, %d},\n" % (r, g, b))
         f.write("};\n\n")
         f.write("static const gfx_resource_t %s_resources[] = {\n" % name)

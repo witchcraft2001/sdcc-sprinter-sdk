@@ -33,14 +33,7 @@
 #define VRAM_TRANSPARENT    0x08    /* Skip 0xFF bytes */
 #define VRAM_ONLY           0x04    /* Write to VRAM only */
 
-/** 6-bit RGB palette entry, matching Sprinter hardware range. */
-typedef struct video_rgb6 {
-    u8 r;
-    u8 g;
-    u8 b;
-} video_rgb6_t;
-
-/** 8-bit RGB palette entry, scaled to hardware range by video_* APIs. */
+/** 8-bit RGB palette entry */
 typedef struct video_rgb8 {
     u8 r;
     u8 g;
@@ -71,17 +64,11 @@ void video_vsync(void) SPRINTER_NAKED_DECL;
  */
 void video_setpal(u8 index, u8 r, u8 g, u8 b);
 
-/** Set a range of palette entries using 6-bit RGB components.
+/** Set a range of palette entries using 8-bit RGB components.
  *  first: first palette index.
  *  count: number of entries, 1..256. The range must not wrap past 255.
- *  colors: count entries in RGB order.
  */
-void video_setpal_range(u8 first, u16 count, const video_rgb6_t *colors);
-
-/** Set a range of palette entries using 8-bit RGB components.
- *  Components are scaled down to Sprinter's 6-bit hardware palette.
- */
-void video_setpal_range8(u8 first, u16 count, const video_rgb8_t *colors);
+void video_setpal_range(u8 first, u16 count, const video_rgb8_t *colors);
 
 /** Load all 256 palette entries quickly, in both hardware palette pages.
  *
@@ -93,7 +80,7 @@ void video_setpal_range8(u8 first, u16 count, const video_rgb8_t *colors);
  *  Safe to call in any video mode. Allocates ~1 KB on the stack while
  *  running and restores PORT_Y to its safe value (0xC0) on return.
  */
-void video_setpal256_fast(const video_rgb6_t *colors) SPRINTER_NAKED_DECL;
+void video_setpal256_fast(const video_rgb8_t *colors) SPRINTER_NAKED_DECL;
 
 /** Load BIOS GRAF preset palette. */
 void video_setpal_graf(void) SPRINTER_NAKED_DECL;

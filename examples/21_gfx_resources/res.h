@@ -6,15 +6,15 @@
 #define DEMO_GFX_RESOURCE_COUNT 2
 #define DEMO_GFX_PALETTE_COUNT 8
 
-static const video_rgb6_t demo_gfx_palette[] = {
-    {63, 60, 16},
-    {16, 56, 24},
-    {16, 48, 63},
-    {36, 24, 63},
-    {63, 24, 48},
-    {63, 63, 63},
-    {63, 8, 8},
-    {63, 40, 8},
+static const video_rgb8_t demo_gfx_palette[] = {
+    {255, 240, 64},
+    {64, 224, 96},
+    {64, 192, 255},
+    {144, 96, 255},
+    {255, 96, 192},
+    {255, 255, 255},
+    {255, 32, 32},
+    {255, 160, 32},
 };
 
 static const gfx_resource_t demo_gfx_resources[] = {

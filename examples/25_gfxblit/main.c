@@ -2,23 +2,23 @@
 #include <sprinter/gfx.h>
 #include <string.h>
 
-static const video_rgb6_t palette[] = {
-    {0, 0, 0},       /* 0 black */
-    {6, 8, 16},      /* 1 dark blue */
-    {12, 18, 28},    /* 2 slate */
-    {28, 14, 8},     /* 3 brown */
-    {48, 28, 10},    /* 4 orange */
-    {63, 48, 16},    /* 5 yellow */
-    {14, 42, 18},    /* 6 green */
-    {10, 56, 48},    /* 7 teal */
-    {8, 32, 63},     /* 8 blue */
-    {36, 22, 63},    /* 9 violet */
-    {56, 18, 42},    /* 10 magenta */
-    {63, 18, 18},    /* 11 red */
-    {42, 42, 42},    /* 12 gray */
-    {52, 52, 52},    /* 13 light gray */
-    {63, 63, 50},    /* 14 warm white */
-    {63, 63, 63}     /* 15 white */
+static const video_rgb8_t palette[] = {
+    {0, 0, 0},         /* 0 black */
+    {24, 32, 65},      /* 1 dark blue */
+    {48, 73, 113},     /* 2 slate */
+    {113, 56, 32},     /* 3 brown */
+    {195, 113, 40},    /* 4 orange */
+    {255, 195, 65},    /* 5 yellow */
+    {56, 170, 73},     /* 6 green */
+    {40, 227, 195},    /* 7 teal */
+    {32, 130, 255},    /* 8 blue */
+    {146, 89, 255},    /* 9 violet */
+    {227, 73, 170},    /* 10 magenta */
+    {255, 73, 73},     /* 11 red */
+    {170, 170, 170},   /* 12 gray */
+    {211, 211, 211},   /* 13 light gray */
+    {255, 255, 203},   /* 14 warm white */
+    {255, 255, 255}    /* 15 white */
 };
 
 static const u8 sprite16[256] = {

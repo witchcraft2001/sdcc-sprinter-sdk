@@ -53,11 +53,11 @@ static void fill_screen_color1(void) {
 }
 
 static void reset_palette_red(void) {
-    bios_setpal(1, 63, 0, 0);
+    bios_setpal(1, 255, 0, 0);   /* full 8-bit red */
 }
 
 /* Test 1: WIN3 + $C3E0 (palette page 0).
- * Writes R=0, G=0, B=0xFC -> palette[1] should become BLUE. */
+ * Writes R=0, G=0, B=0xFF -> palette[1] should become BLUE. */
 static void test_win3_palette(void) {
     __asm
         di
@@ -70,7 +70,7 @@ static void test_win3_palette(void) {
         xor     a
         ld      (#0xC3E0), a            ; R = 0
         ld      (#0xC3E1), a            ; G = 0
-        ld      a, #0xFC
+        ld      a, #0xFF
         ld      (#0xC3E2), a            ; B = max -> blue
         ld      a, #0xC0
         out     (#0x89), a
@@ -93,7 +93,7 @@ static void test_win0_palette(void) {
         xor     a
         ld      (#0x03E0), a            ; R = 0
         ld      (#0x03E1), a            ; G = 0
-        ld      a, #0xFC
+        ld      a, #0xFF
         ld      (#0x03E2), a            ; B = max
         ld      a, #0xC0
         out     (#0x89), a
@@ -116,7 +116,7 @@ static void test_win3_palette_alt(void) {
         xor     a
         ld      (#0xC3E4), a            ; R = 0
         ld      (#0xC3E5), a            ; G = 0
-        ld      a, #0xFC
+        ld      a, #0xFF
         ld      (#0xC3E6), a            ; B = max
         ld      a, #0xC0
         out     (#0x89), a
@@ -139,7 +139,7 @@ static void test_win0_palette_alt(void) {
         xor     a
         ld      (#0x03E4), a            ; R = 0
         ld      (#0x03E5), a            ; G = 0
-        ld      a, #0xFC
+        ld      a, #0xFF
         ld      (#0x03E6), a            ; B = max
         ld      a, #0xC0
         out     (#0x89), a
@@ -192,7 +192,7 @@ t5_template:
         xor     a
         ld      (#0x43E0), a            ; R = 0
         ld      (#0x43E1), a            ; G = 0
-        ld      a, #0xFC
+        ld      a, #0xFF
         ld      (#0x43E2), a            ; B = max -> blue
         ld      a, #0xC0
         out     (#0x89), a

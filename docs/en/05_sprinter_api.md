@@ -353,7 +353,7 @@ u8   inp(u16 port);
 void outp(u16 port, u8 value);
 ```
 
-- `bios_setpal(index, r, g, b)` updates one palette entry. `index` is `0..255`; each color component is `0..63`.
+- `bios_setpal(index, r, g, b)` updates one palette entry. `index` is `0..255`; each color component is `0..255`.
 - `bios_putpixel(x, y, color)` writes one pixel in graphics mode.
 - `bios_version()` returns the BIOS version in BCD form.
 - `bios_board_id()` returns the board or Sprinter type identifier.
@@ -385,8 +385,7 @@ void video_sync_enable(void);
 void video_sync_disable(void);
 void video_vsync(void);
 void video_setpal(u8 index, u8 r, u8 g, u8 b);
-void video_setpal_range(u8 first, u16 count, const video_rgb6_t *colors);
-void video_setpal_range8(u8 first, u16 count, const video_rgb8_t *colors);
+void video_setpal_range(u8 first, u16 count, const video_rgb8_t *colors);
 void video_setpal_graf(void);
 void video_mapvram(u8 win, u8 page);
 void video_safe_porty(void);
@@ -406,8 +405,7 @@ void video_safe_porty(void);
   subsequent frames and is disabled again by `video_setmode(VMODE_TEXT*)` or
   `dss_exit()`.
 - `video_setpal(index, r, g, b)` sets one palette entry using 8-bit RGB values (`0..255` each).
-- `video_setpal_range(first, count, colors)` sets a range of colors using 6-bit RGB values (`0..63`). `count` may be up to 255.
-- `video_setpal_range8(first, count, colors)` sets a range of colors using 8-bit RGB values (`0..255`) and scales them to the hardware range.
+- `video_setpal_range(first, count, colors)` sets a range of colors using 8-bit RGB values (`0..255` per channel, `video_rgb8_t`). `count` may be up to 256.
 - `video_setpal_graf()` loads the built-in BIOS GRAF palette.
 - `video_mapvram(win, page)` maps a VRAM page into memory window `0..3`. VRAM pages typically start at `0x50`.
 - `video_safe_porty()` restores `PORT_Y` to a safe value after raw pixel access.
