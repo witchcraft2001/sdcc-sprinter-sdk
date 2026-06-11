@@ -144,6 +144,7 @@ Key chapters:
 - [Porting from SOLID C](docs/en/07_porting_from_solidc.md) — header/function/type mapping, step-by-step migration guide
 - [Standard Library Reference](docs/en/04_standard_library.md) — stdio.h, stdlib.h, string.h, ctype.h, conio.h
 - [Graphics Guide](docs/en/06_graphics_guide.md) — 320x256 mode, palette, VRAM pixel drawing
+- [Extended WIN0..WIN2 layout](docs/en/11_extended_layout.md) — ~47 KB programs (code in WIN0+WIN1, private WIN2) via RST trampolines, built with a one-line Makefile
 
 ## Creating Your Own Project
 
@@ -237,6 +238,17 @@ include $(SDK_DIR)examples/common.mk
 | Compact | `0x8100` | `0xBFFF` | ~16 KB (WIN2 only) |
 | Extended | `0x4100` | `0xFFFE` | ~32 KB code + WIN3 for stack |
 | Page2 (`CRT0_PAGE2=1`) | `0x4200` | `0x40FF` (bootstrap) | code in WIN1; CRT0 allocates WIN2 page at runtime, working stack at `0xBFFF` |
+| Extended WIN0..WIN2 (`include ../win0.mk`) | `0x0180` | `0xBF00` | **~47 KB** (code WIN0+WIN1, private WIN2 for data/stack) |
+
+For programs that need more than the standard 32 KB, the **extended WIN0..WIN2 layout** runs the program from WIN0 and routes BIOS/DSS/IM1 through trampolines (a small stage-1 loader streams the code into freshly allocated pages). It gives ~47 KB, and ordinary C — including `printf` and stdio — builds unchanged with a one-line Makefile:
+
+```makefile
+APP  = myapp
+SRCS = main.c
+include ../win0.mk
+```
+
+See [docs/en/11_extended_layout.md](docs/en/11_extended_layout.md) for the design, runtime files (`lib/win0/`), tools, and examples (`examples/35`, `37`–`42`).
 
 `CRT0_PAGE2=1` selects an alternative CRT0 (`lib/crt0_page2.s`) that calls `DSS.GETMEM` + `DSS.SETWIN2` before `main()`, so WIN2 is a runtime-allocated page rather than part of the EXE image. Use it when **(a)** you want to keep the on-disk EXE small (code + initialised data fit in WIN1, ≤ ~15.5 KB), or **(b)** the program needs a contiguous 32 KB workspace at `0x8000-0xFFFF` (WIN2+WIN3) free of code and initialised data. To enable, add a single line to your project Makefile **before** `include`:
 
