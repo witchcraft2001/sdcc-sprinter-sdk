@@ -33,6 +33,13 @@
 #define VRAM_TRANSPARENT    0x08    /* Skip 0xFF bytes */
 #define VRAM_ONLY           0x04    /* Write to VRAM only */
 
+/** 8-bit RGB palette entry */
+typedef struct video_rgb8 {
+    u8 r;
+    u8 g;
+    u8 b;
+} video_rgb8_t;
+
 /** Set graphics video mode */
 void video_setmode(u8 mode);
 
@@ -50,6 +57,23 @@ void video_vsync(void);
  *  r, g, b: 0-255 each
  */
 void video_setpal(u8 index, u8 r, u8 g, u8 b);
+
+/** Set a range of palette entries using 8-bit RGB components.
+ *  first: first palette index.
+ *  count: number of entries, 1..256. The range must not wrap past 255.
+ */
+void video_setpal_range(u8 first, u16 count, const video_rgb8_t *colors);
+
+/** Load all 256 palette entries quickly, in both hardware palette pages.
+ *
+ *  Optimised whole-palette update for fades and full-screen image swaps;
+ *  internally loops bios_setpal() over both palette pages. Safe in any
+ *  video mode.
+ */
+void video_setpal256_fast(const video_rgb8_t *colors);
+
+/** Load BIOS GRAF preset palette. */
+void video_setpal_graf(void);
 
 /** Map VRAM page into memory window.
  *  win: memory window (0-3)
