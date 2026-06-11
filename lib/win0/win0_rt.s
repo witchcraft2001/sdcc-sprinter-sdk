@@ -20,37 +20,61 @@
 
         .area   _WINRT
 
+; Trampoline rules:
+;  * Only WIN0 is switched to the DSS core page; ROM paging for BIOS calls is
+;    done by that page's own RST_0x08 stub (#7C/#3C), so we never touch #3C.
+;  * The caller's interrupt state is PRESERVED, not forced: sample IFF on entry
+;    (LD A,I -> P/V) and re-enable INTs only if the caller had them enabled. Some
+;    BIOS calls require DI on entry; the trampoline must not implicitly enable
+;    INTs. We carry the decision with self-modifying code (the trampoline lives in
+;    WIN2 RAM): patch the in-place EI/NOP opcode bytes (0xFB / 0x00) instead of a
+;    data cell + branch -- smaller and faster. (LD A,I has the known Z80 erratum
+;    if an INT lands exactly during it; at worst INTs stay disabled for one call.)
+
 ; --- BIOS (RST #08) ---
 _rst08_tramp::
-        di
-        push    af
-        xor     a
-        out     (#0x3C), a          ; ROM overlay off
+        push    af                  ; save caller AF (A may be a param)
+        ld      a, i                ; P/V = caller IFF2
+        di                          ; protect the WIN0 swap
+        ld      a, #0x00            ; NOP opcode (caller had INTs disabled)
+        jp      po, 1$              ; PO => IFF2 was 0 -> keep NOP
+        ld      a, #0xFB            ; EI opcode (caller had INTs enabled)
+1$:
+        ld      (2$), a             ; SMC: patch pre-call EI/NOP
+        ld      (3$), a             ; SMC: patch post-call EI/NOP
         ld      a, (_wrt_dss)
         out     (#0x82), a          ; WIN0 = DSS core page
-        pop     af
-        ei
+        pop     af                  ; restore caller AF
+2$:
+        nop                         ; -> EI/NOP: restore caller INT state for the call
         rst     #0x08
         di
-        push    af
+        push    af                  ; save return AF (A + CF)
         ld      a, (_wrt_p1)
-        out     (#0xA2), a          ; WIN1 = P1 (restore multi-page code window)
+        out     (#0xA2), a          ; WIN1 = P1
         ld      a, (_wrt_p0)
         out     (#0x82), a          ; WIN0 = P0
         pop     af
-        ei
+3$:
+        nop                         ; -> EI/NOP: restore caller INT state
         ret
 
 ; --- DSS (RST #10) ---
 _rst10_tramp::
-        di
         push    af
-        xor     a
-        out     (#0x3C), a
+        ld      a, i                ; P/V = caller IFF2
+        di
+        ld      a, #0x00
+        jp      po, 1$
+        ld      a, #0xFB
+1$:
+        ld      (2$), a             ; SMC: patch pre-call EI/NOP
+        ld      (3$), a             ; SMC: patch post-call EI/NOP
         ld      a, (_wrt_dss)
         out     (#0x82), a          ; WIN0 = DSS core page
         pop     af
-        ei
+2$:
+        nop                         ; -> EI/NOP
         rst     #0x10
         di
         push    af
@@ -59,7 +83,8 @@ _rst10_tramp::
         ld      a, (_wrt_p0)
         out     (#0x82), a          ; WIN0 = P0
         pop     af
-        ei
+3$:
+        nop                         ; -> EI/NOP
         ret
 
 ; --- IM1 (RST #38) ---

@@ -27,8 +27,6 @@ trampolines + a primary loader in `TasmEXE.asm`).
 | Primitive | Value |
 |---|---|
 | Window selectors (16 KB page) | WIN0=`#82`, WIN1=`#A2`, WIN2=`#C2`, WIN3=`#E2` |
-| System-ROM overlay in WIN0 | `OUT (#7C),A` ROM on; `OUT (#3C),A` ROM off (reveals the `#82` RAM page) |
-| ROM page select | `#8F` (ROM_RG) |
 | Border | port `#FE`, bits 0-2 |
 | RST dispatchers | BIOS=`#08`, DSS=`#10`, disk=`#18`, mouse=`#30`, IM1=`#38`; selector in `C` |
 
@@ -41,8 +39,7 @@ WIN0 holds the **DSS core RAM page** ("COREPAGE"), allocated dynamically from th
 EMM when DSS deploys (its physical number is **not** a fixed constant). That page
 carries the RST vector table (the `RST_0x08` stub, the `RST_0x10` dispatcher,
 `RST_0x18/0x30`, the `RST_0x38` IM1 handler) and all DSS `CORE_BUFFERS` (below
-`0x4000`). `RST #10` dispatches only while that page is in WIN0 — the BIOS ROM's
-`0x0010` is an empty stub.
+`0x4000`). `RST #10` dispatches only while that page is in WIN0.
 
 **Consequence:** capture `dss_page = IN A,(#82)` at start; for each firmware call,
 map `dss_page` into WIN0, then restore the program page afterwards.
@@ -127,25 +124,38 @@ The vector table lives at `P0:0x0000-0x003F` (3-byte `JP` stubs). The trampoline
 bodies live in `_WINRT` at `0x8000` (WIN2), because a trampoline changes WIN0
 "from under itself" — it must execute from a window that is never repaged.
 
-DSS trampoline (BIOS and mouse are analogous):
+DSS trampoline (BIOS and mouse are analogous). Two correctness rules:
+
+* **Only WIN0 is switched** to the DSS core page (WIN2 is never touched).
+* **The caller's interrupt state is preserved, not forced.** The trampoline
+  samples IFF on entry (`LD A,I` → P/V) and re-enables interrupts only if the
+  caller had them enabled — some BIOS calls require DI on entry, so it must never
+  implicitly enable them. The decision is carried by self-modifying code (the
+  trampoline is in WIN2 RAM): the in-place `EI`/`NOP` opcode bytes (`0xFB`/`0x00`)
+  are patched at entry — no data cell, no branch.
 
 ```
-rst10_tramp:                ; in WIN2
+rst10_tramp:                      ; in WIN2
+        push af                    ; save caller AF (A may be a param)
+        ld   a,i                  ; P/V = caller IFF2
+        di                        ; protect the WIN0 swap
+        ld   a,#0x00 : jp po,1$ : ld a,#0xFB   ; 0xFB=EI if enabled, 0x00=NOP if not
+1$:     ld   (2$),a : ld (3$),a   ; SMC-patch the two in-place EI/NOP bytes
+        ld   a,(dss_page) : out (#82),a   ; WIN0 = DSS core page -> 0x0010 = dispatcher
+        pop  af                   ; restore caller AF
+2$:     nop                       ; <- EI/NOP: caller's INT state for the call
+        rst  #10                  ; real DSS call
         di
-        push af
-        xor  a            : out (#3C),a    ; ROM overlay off
-        ld   a,(dss_page) : out (#82),a    ; WIN0 = DSS core page -> 0x0010 = dispatcher
+        push af                   ; save return AF (A + CF)
+        ld   a,(prog_w1) : out (#A2),a    ; restore program windows
+        ld   a,(prog_w0) : out (#82),a
         pop  af
-        ei                                 ; frame INTs during the call are safe (WIN0 = DSS)
-        rst  #10                           ; real DSS call
-        di
-        push af
-        ld   a,(prog_w1)  : out (#A2),a    ; restore the program windows
-        ld   a,(prog_w0)  : out (#82),a
-        pop  af
-        ei
+3$:     nop                       ; <- EI/NOP: caller's INT state
         ret
 ```
+(`LD A,I` carries the known Z80 erratum if an interrupt lands exactly during it,
+which can at worst leave interrupts disabled for one call — rare and acceptable.
+See `lib/win0/win0_rt.s` for the exact code.)
 
 IM1 trampoline: while the program runs, an interrupt vectors to
 `P0:0x0038 → rst38_tramp` (WIN2). It saves registers, maps WIN0=DSS core, pushes
@@ -190,7 +200,7 @@ Makefile's `include` line for `include ../win0.mk`.
   ffirst/fnext/getenv/setenv/expath/exec`).
 * `lib/win0/dss_raw.s` — the raw `dss_*_raw` (RST #10 without bounce).
 * `lib/win0/loader.c` — stage-1 PRELOAD loader.
-* `tools/win0_exe.py` — `.EXE` packager; `tools/win0_preexe.py` — PRELOAD check.
+* `tools/win0_exe.py` — `.EXE` packager.
 * `examples/win0.mk` — the build profile.
 
 ## 11.10. Notes and edge cases
@@ -216,7 +226,3 @@ Usage examples (one-line Makefile `include ../win0.mk`):
 * `40_win0file` — stdio (`fopen`/`fputs`/`fgets`), unchanged;
 * `41_win0misc` — directory ops (`mkdir/chdir/rmdir/ffirst`) + a page-leak check;
 * `42_win0exec` — nested `dss_exec` (a win0 parent launches a standard child).
-
-Low-level spikes (mechanism proofs, **not** application templates; they do not use
-the `lib/win0/` runtime): `31_win0spike` (RST10 trampoline), `32_im1spike` (IM1
-trampoline), `36_pretest` (PRELOAD verification).
