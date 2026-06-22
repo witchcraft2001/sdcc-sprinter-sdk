@@ -5,6 +5,7 @@ i8 dss_appinfo(u8 subfunc, char *buf) __naked {
     __asm
         ; sdcccall(1): subfunc -> A, buf -> DE
         push    ix
+        ex      de, hl          ; HL = buf (DSS 0x47 expects buffer in HL)
         ld      b, a            ; B = subfunc
         ld      c, #0x47
         rst     #0x10

@@ -23,7 +23,7 @@ STACK       ?= 0xBFFF
 CRT0_NAME   ?= crt0
 endif
 
-BUILD       = _build
+BUILD      ?= _build
 SDCC_TARGET = -mz80
 SDCC_FLAGS  = $(SDCC_TARGET) --max-allocs-per-node 5000 --opt-code-speed
 INC         = -I$(SDK_DIR)include

@@ -19,7 +19,7 @@ SDASZ80     ?= sdasz80
 SDLDZ80     ?= sdldz80
 PYTHON      ?= python3
 
-BUILD       = _build
+BUILD      ?= _build
 WIN0DIR     = $(SDK_DIR)lib/win0
 INC         = -I$(SDK_DIR)include -I$(WIN0DIR)
 SPRLIB      = $(SDK_DIR)build/sprinter.lib
