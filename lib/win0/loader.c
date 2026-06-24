@@ -78,6 +78,29 @@ void main(void) {
         while (i < 127 && d[i] && d[i] != '\r' && d[i] != '\n') i++;
         d[i] = 0;
     }
+    {
+        /* Application directory at P0:0x0100 (== 0x4100 via WIN1) for the win0
+         * payload's app_dir() — a win0 payload cannot get it itself (it remaps WIN2
+         * and loses the PSP). Parse it from the PSP HERE (still mapped). DON'T call
+         * DSS APPINFO: its handler (Estex-DSS API/AppInfo.asm .FN1) does a CPIR/CPDR
+         * scan + a length-computed LDIR over the PSP path, which runs long and
+         * corrupts -> reboots -> hangs the machine when THIS program was itself
+         * dss_exec'd by another (the nested-exec PSP path layout differs). The PSP
+         * holds [len][cmdline][..][path]; the path begins at psp + psp[0] + 3 (same
+         * as that handler). Bound-scan it for the last '\'; result <= 94 bytes fits
+         * the free 0x0100..0x017F slot (cmd line ends 0x00FF, code starts 0x0180). */
+        u8 *d = (u8 *)0x4100;            /* P0:0x0100 via WIN1 */
+        const char *path = (const char *)(psp + psp[0] + 3);
+        u16 n, i, lastsl = 0xFFFF;
+        for (n = 0; n < 256 && path[n]; n++)
+            if (path[n] == '\\' || path[n] == '/') lastsl = n;
+        if (lastsl == 0xFFFF || lastsl > 94) {
+            d[0] = 0;                    /* no (or oversized) directory part */
+        } else {
+            for (i = 0; i < lastsl; i++) d[i] = path[i];
+            d[i] = 0;
+        }
+    }
 
     /* map P0 into WIN0, P1 into WIN1, jump; crt0_win0 sets WIN2=P2 + SP */
     __asm
